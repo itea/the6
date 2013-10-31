@@ -1,10 +1,11 @@
-var CodeBox = mix("div.code-box spellcheck='false' > ol.codes", function (id) {
-        var _mix = this._mix,
-            codesElement = this.querySelector("ol.codes");
+var InputController = function () {
+    },
 
-        if (id) this.id = id;
+    LineBox = mix("ol.codes", function (parentNode, cursor, codeMeasure, codeHighlight) {
 
         var mousedownInfo = {x:-1, y:-1},
+            codesElement = this,
+            _mix = this._mix,
 
             // find up to locate the CodeLine
             locateLine = function (node, topNode) {
@@ -23,14 +24,14 @@ var CodeBox = mix("div.code-box spellcheck='false' > ol.codes", function (id) {
                 return null;
             };
 
-        this.addEventListener("mousedown", function (event) {
+        codesElement.addEventListener("mousedown", function (event) {
             var lipre = locateLineContentElement(event.target, this);
             if (lipre == null) return;
 
-            _mix.codeHighlight.clearSelection();
+            codeHighlight.clearSelection();
 
             var lirect = lipre.getBoundingClientRect(),
-                pos = _mix.codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
+                pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
 
             var codesRect = codesElement.getBoundingClientRect();
             mousedownInfo.x = event.clientX - codesRect.left;
@@ -43,13 +44,13 @@ var CodeBox = mix("div.code-box spellcheck='false' > ol.codes", function (id) {
             // mousedownInfo.range.setStart( lipre.firstChild || lipre, pos.charIndex );
         });
 
-        this.addEventListener("mousemove", function (event) {
+        codesElement.addEventListener("mousemove", function (event) {
             if (mousedownInfo.range == null) return;
             var lipre = locateLineContentElement(event.target, this);
             if (lipre == null) return;
 
             var lirect = lipre.getBoundingClientRect(),
-                pos = _mix.codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
+                pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
 
             var range = mousedownInfo.range;
             if ( mousedownInfo.rangeStartNode == (lipre.firstChild || lipre) ) {
@@ -68,28 +69,36 @@ var CodeBox = mix("div.code-box spellcheck='false' > ol.codes", function (id) {
                 range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
                 range.setEnd( lipre.firstChild || lipre, pos.charIndex );
             }
-            _mix.codeHighlight.select( range, this.scrollTop, this.scrollLeft );
+            codeHighlight.select( range, parentNode.scrollTop, parentNode.scrollLeft );
         });
 
-        this.addEventListener("mouseup", function (event) {
+        codesElement.addEventListener("mouseup", function (event) {
             window.range = mousedownInfo.range;
             //mousedownInfo.range.detach();
             mousedownInfo.range = null;
         });
 
-        this.addEventListener("click", function (event) {
+        codesElement.addEventListener("click", function (event) {
             var lipre = locateLineContentElement(event.target, this);
             if (lipre == null) return;
 
             var lirect = lipre.getBoundingClientRect(),
-                rect = this.getBoundingClientRect(),
-                pos = _mix.codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top),
-                scrollX = _mix.node.scrollLeft, scrollY = _mix.node.scrollTop;
+                rect = codesElement.getBoundingClientRect(),
+                pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top),
+                //scrollX = parentNode.scrollLeft, scrollY = parentNode.scrollTop;
+                scrollX = scrollY = 0;
 
-            _mix.cursor.setPosition(pos.posX + scrollX, lirect.top - rect.top + pos.posY + scrollY);
-            _mix.activeLine = lipre.parentNode._mix;
-            _mix.columnIndex = pos.charIndex;
+            cursor.setPosition(pos.posX + scrollX, lirect.top - rect.top + pos.posY + scrollY);
+            parentNode._mix.activeLine = lipre.parentNode._mix;
+            parentNode._mix.columnIndex = pos.charIndex;
         });
+    }),
+
+    CodeBox = mix("div.code-box spellcheck='false'", function (id) {
+        var _mix = this._mix,
+            codesElement;
+
+        if (id) this.id = id;
 
         var setLinePosition = function (_mix, codeline, columnIndex, resetLineContent) {
             var pos;
@@ -192,10 +201,13 @@ var CodeBox = mix("div.code-box spellcheck='false' > ol.codes", function (id) {
         _mix.cursor = new Cursor(cursorEventHandler)._mix;
         _mix.codeMeasure = new CodeMeasure()._mix;
         _mix.codeHighlight = new CodeHighlight()._mix;
+        codesElement = new LineBox(this, _mix.cursor, _mix.codeMeasure, _mix.codeHighlight);
+        _mix.lineBox = codesElement._mix;
 
+        this.appendChild(_mix.lineBox.node);
         this.appendChild(_mix.cursor.node);
         this.appendChild(_mix.codeHighlight.node);
-        this.insertBefore(_mix.codeMeasure.node, this.children[0]);
+        this.appendChild(_mix.codeMeasure.node);
 
         window.setTimeout( function () { // after DOM rendered
             _mix.codeMeasure.setLine("");
