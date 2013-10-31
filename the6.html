@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="gbk">
+	<title>TITLE</title>
+	<style type="text/css">
+.code-box {position: relative; overflow:auto; padding: 0 0 0 3em;}
+.code-box {font: normal normal normal 14px/17px monospace; cursor:text;}
+
+.code-box .code-measure {position:absolute; height: 0; visibility: hidden; overflow:hidden; margin:0;}
+.code-box .code-measure pre {white-space: pre-wrap; margin:0;padding:0; position:static;}
+.code-box .code-measure span {}
+
+.code-box .code-cursor {position:absolute; border-left:1px solid black; height: 15px; width: 0px; overflow:hidden; cursor:text;}
+.code-box .code-cursor input {border: none; outline: none; padding: 0; margin:0;}
+.code-box .code-highlight {position:absolute; top:0;left:0;}
+.code-box .code-highlight .selected {position:absolute; background-color: rgb(132, 255, 172);z-index:-1;}
+
+.codes {list-style: none outside; padding:0; margin:0;}
+.codes {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
+.codes ::selection {background-color: transparent;}
+.codes li {margin: 0; padding:0; /*white-space: pre;*/ border:none; outline:none;}
+.codes li {counter-increment: lineNumber;}
+.codes .nu {position:absolute; left:0px;width:3em;background-color:#eee; /*text-align:right;*/}
+.codes .nu {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
+.codes .nu:after {content: counter(lineNumber);}
+.codes pre:empty:after {content:" ";}
+.codes pre {margin: 0; padding: 0; border: none; white-space: pre-wrap;}
+	</style>
+    <script language="javascript" src="markless.js"></script>
+    <script language="javascript" src="basic.js"></script>
+    <script language="javascript" src="codebox.js"></script>
+    <script language="javascript" src="cursor.js"></script>
+    <script language="javascript" src="measure.js"></script>
+    <script language="javascript" src="highlight.js"></script>
+    <script language="javascript" src="codeline.js"></script>
+    <script language="javascript" src="misc.js"></script>
+	<script language="javascript" id="inpagecodes">
+var fn = function () {
+    var inpagecodes = document.getElementById("inpagecodes").textContent;
+    var inpagestyle = document.querySelector("style").textContent;
+
+    var coderBox = createCoderBox(inpagestyle);
+    document.getElementById("cnt").appendChild( coderBox.boxElement );
+};
+window.onload = function() {
+    fn();
+};
+	</script>
+</head>
+<body>
+<div id="cnt"></div>
+<!--<ol id="codes" class="codes">
+<li>window.onload = function() {</li>
+<li>    fn();</li>
+<li>};</li>
+<ol>
+-->
+</body>
+</html>
