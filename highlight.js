@@ -1,53 +1,71 @@
-var createMask = function (top, left, height, width) {
-    // TODO use HTML string instead of createElement
-        var e = document.createElement("div");
-        e.className = "selected";
-        e.style.top = top + "px";
-        e.style.left = left + "px";
-        e.style.height = height + "px";
-        e.style.width = width + "px";
-        return e;
-    },
+var setSelectionRect = function (node, t, l, h, w, show) {
+    var style = node.style;
+        if (t === "hide")
+            style.display = "none";
+        // else if (t === "show")
+        //     style.display = "block";
+        else {
+            style.top = t + "px";
+            style.left = l + "px";
+            style.height = h + "px";
+            style.width = w + "px";
+            if (show) style.display = "block";
+        }
+    }
     
-    // TODO 
-    CodeHighlight = mix("div.code-highlight", {
+    CodeHighlight = mix("div.code-highlight\n div.selected\n div.selected\n div.selected", function () {
+        this._mix.selectionMaskers = [ this.children[0], this.children[1], this.children[2] ];
+    }, {
         setBaseOffset: function (x, y) {
             this.baseX = x;
             this.baseY = y;
         },
         clearSelection: function () {
-            this.node.innerHTML = "";
+            setSelectionRect( this.selectionMaskers[0], "hide");
+            setSelectionRect( this.selectionMaskers[1], "hide");
+            setSelectionRect( this.selectionMaskers[2], "hide");
         },
-        select: function (range, scrollTop, scrollLeft) {
-            this.clearSelection();
-            var rects = range.getClientRects(), len = rects.length, rect, rectLast, e, bRect, bulkHeigt = 0;
+        select: function (range, lineBox) {
+        var rects = range.getClientRects(), len = rects.length, rect, rectLast, e, bRect, bulkHeigt = 0,
+            lineBoxRect = lineBox.getBoundingClientRect();
+
             if (len === 1) {
                 rect = rects[0];
-                e = createMask(rect.top - this.baseY + (scrollTop || 0),
-                    rect.left - this.baseX + (scrollLeft || 0),
+                setSelectionRect( this.selectionMaskers[1], "hide");
+                setSelectionRect( this.selectionMaskers[2], "hide");
+                setSelectionRect( this.selectionMaskers[0],
+                    rect.top - this.baseY - lineBoxRect.top,
+                    rect.left + this.baseX - lineBoxRect.left,
                     rect.height,
-                    rect.width);
-                this.node.appendChild(e);
+                    rect.width,
+                    true);
             } else {
                 bRect = range.getBoundingClientRect();
                 rect = rects[0];
-                this.node.appendChild( createMask( rect.top - this.baseY + (scrollTop || 0),
-                    rect.left - this.baseX + (scrollLeft || 0),
-                    rect.height, bRect.width - rect.left + bRect.left) );
+                setSelectionRect( this.selectionMaskers[0],
+                    rect.top - this.baseY - lineBoxRect.top,
+                    rect.left + this.baseX - lineBoxRect.left,
+                    rect.height,
+                    bRect.width - rect.left + bRect.left,
+                    true);
                 
-                bulkHeight = bRect.height - rect.height;
-
                 rectLast = rects[ len -1 ];
-                this.node.appendChild( createMask( rectLast.top - this.baseY + (scrollTop || 0),
-                    rectLast.left - this.baseX + (scrollLeft || 0),
-                    rectLast.height, rectLast.width) );
+                setSelectionRect( this.selectionMaskers[2],
+                    rectLast.top - this.baseY - lineBoxRect.top,
+                    rectLast.left + this.baseX - lineBoxRect.left,
+                    rectLast.height,
+                    rectLast.width,
+                    true);
 
                 bulkHeight = rectLast.top - rect.height - rect.top;
-                if (bulkHeight <=0) return;
+                if (bulkHeight <= 0) return;
 
-                this.node.appendChild( createMask( rect.top + rect.height - this.baseY + (scrollTop || 0),
-                    rectLast.left - this.baseX + (scrollLeft || 0),
-                    bulkHeight, bRect.right - rectLast.left) );
+                setSelectionRect( this.selectionMaskers[1],
+                    rect.top + rect.height - this.baseY - lineBoxRect.top,
+                    rectLast.left + this.baseX - lineBoxRect.left,
+                    bulkHeight,
+                    bRect.right - rectLast.left,
+                    true);
             }
         }
     });

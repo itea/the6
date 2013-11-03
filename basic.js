@@ -8,6 +8,10 @@ var mix = markless.mix,
         return "UNKNOWN";
     })(),
 
+    defer = function (cbk) {
+        window.setTimeout(cbk, 0);
+    },
+
     setText = function (node, text) {
         if (typeof node.innerText === "string")
             node.innerText = text;
@@ -17,6 +21,16 @@ var mix = markless.mix,
 
     getText = function (node) {
         return node.innerText || node.textContent;
+    },
+
+    onevent = function (node, eventTypes, callback, capture) {
+        // TODO
+        node.addEventListener(eventTypes, callback, capture);
+    },
+
+    offevent = function (node, eventTypes, callback) {
+        // TODO
+        node.removeEventListener(eventTypes, callback);
     },
 
     scrollLineIntoView = function (codeline) {
