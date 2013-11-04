@@ -1,8 +1,8 @@
 var lineIDseq = 100,
 
     CodeLine = mix("li\n div.nu\n pre", function (content) {
-        // this._mix.lineID = "L" + lineIDseq++;
-        // if (this.dataset) this.dataset.lineId = this._mix.lineID;
+        this._mix.lineID = lineIDseq++;
+        if (this.dataset) this.dataset.lineId = this._mix.lineID;
         this._mix.ePre = this.querySelector("pre");
         if (content) setText( this._mix.ePre, content );
     }, {
@@ -38,19 +38,28 @@ var lineIDseq = 100,
             return node._mix;
         },
 
-        content: function () {
-        var node = this.ePre;
-            return getText(node);
+        /* if passed start/end, then return substring of content. */
+        content: function (start, end) {
+        var node = this.ePre,
+            text = getText(node);
+
+            if (typeof start === "number") {
+                if (typeof end === "number")
+                    return text.substring(start, end);
+                else
+                    return text.substring(start);
+            } else
+                return text;
         },
 
         contentLength: function () {
             return this.content().length;
         },
 
-        insert: function (column, str) {
+        insert: function (start, str) {
         var element = this.ePre,
             origin = getText(element);
-            return setText( element, origin.substring(0, column) + str + origin.substring(column) );
+            return setText( element, origin.substring(0, start) + str + origin.substring(start) );
         },
 
         append: function (str) {
@@ -59,31 +68,20 @@ var lineIDseq = 100,
             return setText( element, origin + str );
         },
 
-        deleteChar: function (column) {
+        deletes: function (start, end) {
         var element = this.ePre,
+            text,
             origin = getText(element);
-            if (column < 0 || column >= origin.length) return origin;
-            return setText( element, origin.substring(0, column) + origin.substring(column +1) );
-        },
+            if (start < 0 || start > origin.length) return "";
 
-        split: function (column) {
-        var element = this.ePre,
-            origin = getText(element);
-            setText( element, origin.substring(0, column) );
-            return new CodeLine( origin.substring(column) );
-        },
-
-        cut: function (column, backward) {
-        var element = this.ePre,
-            origin = getText(element);
-
-            if (backward) {
-                setText( element, origin.substring(column) );
-                return origin.substring(0, column);
+            if (typeof end === "number") {
+                setText( element, origin.substring(0, start) + origin.substring(end) );
+                text = origin.substring( start, end );
             } else {
-                setText( element, origin.substring(0, column) );
-                return origin.substring(column);
+                setText( element, origin.substring(0, start) );
+                text = origin.substring(start);
             }
+            return text;
         }
     });
 

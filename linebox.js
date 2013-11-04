@@ -1,84 +1,199 @@
-var InputController = function (lineBox, cursor, codeMeasure) {
+var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
 
-    var setLinePosition = function (lineBox, codeline, columnIndex, resetLineContent) {
+    var lastLineID = -1,
+
+        showCursorPosition = function (lineBox, codeline, columnIndex, forceSetLine) {
         var pos;
-            if (resetLineContent) codeMeasure.setLine( codeline.content() );
+            if (lastLineID !== codeline.lineID || forceSetLine) {
+                codeMeasure.setLine( codeline.content() );
+                lastLineID = codeline.lineID;
+            }
             pos = codeMeasure.measureByColumn( columnIndex );
             cursor.setPosition(pos.posX, codeline.node.offsetTop + pos.posY);
-            // lineBox.columnIndex = pos.charIndex;
             scrollLineIntoView( codeline );
         };
 
+    var mousedownInfo = {x:-1, y:-1},
+        controller = this,
+        codesElement = lineBox.node,
+
+        // handle mousemove event
+        selectionHandler = function (event) {
+
+        var lipre = locateLineContentElement(event.target, codesElement);
+            if (lipre == null) return;
+
+        var lirect = lipre.getBoundingClientRect(),
+            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
+
+        var range = controller.range;
+            if ( mousedownInfo.rangeStartNode == (lipre.firstChild || lipre) ) {
+                // the same line
+                if (pos.charIndex > mousedownInfo.position.charIndex ) {
+                    range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
+                    range.setEnd( lipre.firstChild || lipre, pos.charIndex );
+                } else {
+                    range.setStart( lipre.firstChild || lipre, pos.charIndex );
+                    range.setEnd( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
+                }
+            } else if (event.clientY - codesElement.getBoundingClientRect().top < mousedownInfo.y ) {
+                range.setStart( lipre.firstChild || lipre, pos.charIndex );
+                range.setEnd( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
+            } else {
+                range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
+                range.setEnd( lipre.firstChild || lipre, pos.charIndex );
+            }
+            codeHighlight.select( range, codesElement );
+        };
+
+        codesElement.addEventListener("mousedown", function (event) {
+        var lipre = locateLineContentElement(event.target, codesElement);
+            if (lipre == null) return;
+
+            onevent( codesElement, "mousemove", selectionHandler);
+
+        var lirect = lipre.getBoundingClientRect(),
+            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
+
+        var codesRect = codesElement.getBoundingClientRect();
+            mousedownInfo.x = event.clientX - codesRect.left;
+            mousedownInfo.y = event.clientY - codesRect.top;
+            mousedownInfo.target = event.target;
+            mousedownInfo.position = pos;
+            mousedownInfo.rangeStartNode = lipre.firstChild || lipre;
+
+            if (controller.range) {
+                controller.range.detach();
+                controller.range = null;
+                codeHighlight.clearSelection();
+            }
+            controller.range = document.createRange();
+            controller.range.setStart( mousedownInfo.rangeStartNode, pos.charIndex );
+        });
+
+        onevent( document, "mouseup", function (event) {
+            offevent( codesElement, "mousemove", selectionHandler);
+
+        });
+
+        // mouse locate
+        onevent( codesElement, "mouseup", function (event) {
+        var lipre = locateLineContentElement(event.target, codesElement);
+            if (lipre == null) return;
+
+        var lirect = lipre.getBoundingClientRect(),
+            rect = codesElement.getBoundingClientRect(),
+            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
+
+            cursor.setPosition( pos.posX, lirect.top - rect.top + pos.posY );
+            lineBox.activeLine = lipre.parentNode._mix;
+            lineBox.columnIndex = pos.charIndex;
+        });
+
         cursor.oninput = function (event, type) {
-        var lineContent, activeLine = lineBox.activeLine;
+        var activeLine = lineBox.activeLine;
 
             switch ( type || event.keyCode ) {
             case 8:  // Backspace
-                lineBox.seek( -1 );
-                lineBox.deletes("current");
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                if ( ! controller.range.collapsed ) {
+                    lineBox.deletes( controller.range );
+                    codeHighlight.clearSelection();
+                    controller.range.collapse();
+                } else {
+                    lineBox.seek( -1 );
+                    lineBox.deletes("char");
+                }
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case 9: // Tab
-                lineContent = lineBox.insert( "current", "\t" );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                lineBox.insert( "char", "\t" );
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case 13: // Enter
-                lineContent = lineBox.insert( "current", "\n" );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                lineBox.insert( "char", "\n" );
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case 35: // End
                 lineBox.seek( activeLine.contentLength(), activeLine );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                codeHighlight.clearSelection();
+                controller.range.collapse();
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case 36: // Home
                 lineBox.seek( 0, activeLine );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                codeHighlight.clearSelection();
+                controller.range.collapse();
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case 46: // Delete
-                lineBox.deletes("current");
+                if ( ! controller.range.collapsed ) {
+                    lineBox.deletes( controller.range );
+                    codeHighlight.clearSelection();
+                    controller.range.collapse();
+                    showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                } else
+                    lineBox.deletes("char");
                 break;
 
             case 37: // ArrowLeft
                 lineBox.seek( -1 );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                codeHighlight.clearSelection();
+                controller.range.collapse();
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case 39: // ArrowRight
                 lineBox.seek( 1 );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                codeHighlight.clearSelection();
+                controller.range.collapse();
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case 38: // ArrowUp
                 lineBox.seekLine( -1 );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                codeHighlight.clearSelection();
+                controller.range.collapse();
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case 40: // ArrowDown
                 lineBox.seekLine( 1 );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                codeHighlight.clearSelection();
+                controller.range.collapse();
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case "input":
-                lineContent = lineBox.insert( "current", event.data );
-                setLinePosition( lineBox, activeLine, lineBox.columnIndex, true );
+                lineBox.insert( "char", event.data );
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case "copy":
-                event.clipboardData.setData( "text/plain", lineBox.getSelectedContent() );
+                event.clipboardData.setData( "text/plain", lineBox.getSelectedContent(controller.range) );
                 break;
 
             case "cut":
-                event.clipboardData.setData( "text/plain", lineBox.getSelectedContent("remove") );
+                event.clipboardData.setData( "text/plain", lineBox.getSelectedContent(controller.range) );
+                lineBox.deletes( controller.range );
+                codeHighlight.clearSelection();
+                controller.range.collapse();
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case "paste":
-                lineBox.insert("current", event.clipboardData.getData("text/plain") );
-                setLinePosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                if ( ! controller.range.collapsed ) {
+                    lineBox.insert( controller.range, event.clipboardData.getData("text/plain") );
+                    codeHighlight.clearSelection();
+                    controller.range.collapse();
+                } else {
+                    lineBox.insert("char", event.clipboardData.getData("text/plain") );
+                }
+                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
             }
         };
@@ -103,85 +218,9 @@ var InputController = function (lineBox, cursor, codeMeasure) {
     },
 
     LineBox = mix("ol.codes", function (parentNode, cursor, codeMeasure, codeHighlight) {
+    var _mix = this._mix;
 
-    var mousedownInfo = {x:-1, y:-1},
-        codesElement = this,
-        _mix = this._mix,
-
-        // handle mousemove event
-        selectionHandler = function (event) {
-
-            if (_mix.range == null) return;
-        var lipre = locateLineContentElement(event.target, this);
-            if (lipre == null) return;
-
-        var lirect = lipre.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
-
-        var range = _mix.range;
-            if ( mousedownInfo.rangeStartNode == (lipre.firstChild || lipre) ) {
-                // the same line
-                if (pos.charIndex > mousedownInfo.position.charIndex ) {
-                    range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                    range.setEnd( lipre.firstChild || lipre, pos.charIndex );
-                } else {
-                    range.setStart( lipre.firstChild || lipre, pos.charIndex );
-                    range.setEnd( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                }
-            } else if (event.clientY - codesElement.getBoundingClientRect().top < mousedownInfo.y ) {
-                range.setStart( lipre.firstChild || lipre, pos.charIndex );
-                range.setEnd( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-            } else {
-                range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                range.setEnd( lipre.firstChild || lipre, pos.charIndex );
-            }
-            codeHighlight.select( range, _mix.node );
-        };
-
-        _mix.inputController = new InputController(_mix, cursor, codeMeasure).cursorEventHandler;
-
-        codesElement.addEventListener("mousedown", function (event) {
-        var lipre = locateLineContentElement(event.target, this);
-            if (lipre == null) return;
-
-            onevent( codesElement, "mousemove", selectionHandler);
-
-        var lirect = lipre.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
-
-        var codesRect = codesElement.getBoundingClientRect();
-            mousedownInfo.x = event.clientX - codesRect.left;
-            mousedownInfo.y = event.clientY - codesRect.top;
-            mousedownInfo.target = event.target;
-            mousedownInfo.position = pos;
-            mousedownInfo.rangeStartNode = lipre.firstChild || lipre;
-
-            if (_mix.range) {
-                _mix.range.detach();
-                _mix.range = null;
-            }
-            _mix.range = document.createRange();
-        });
-
-        onevent( document, "mouseup", function (event) {
-            // window.range = _mix.range;
-            offevent( codesElement, "mousemove", selectionHandler);
-
-        });
-
-        // mouse locate
-        onevent( codesElement, "mouseup", function (event) {
-        var lipre = locateLineContentElement(event.target, this);
-            if (lipre == null) return;
-
-        var lirect = lipre.getBoundingClientRect(),
-            rect = codesElement.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
-
-            cursor.setPosition( pos.posX, lirect.top - rect.top + pos.posY );
-            _mix.activeLine = lipre.parentNode._mix;
-            _mix.columnIndex = pos.charIndex;
-        });
+        _mix.inputController = new InputController(_mix, cursor, codeMeasure, codeHighlight);
 
     }, {
         setCode: function (src) {
@@ -204,10 +243,9 @@ var InputController = function (lineBox, cursor, codeMeasure) {
             this.columnIndex = 0;
         },
 
-        getSelectedContent: function (removeContent) {
+        getSelectedContent: function (range) {
 
-        var range = this.range,
-            startLine, endLine, contents = [];
+        var startLine, endLine, contents = [];
 
             if (range.collapsed) return "";
 
@@ -215,17 +253,17 @@ var InputController = function (lineBox, cursor, codeMeasure) {
             endLine = locateLine(range.endContainer, this.node);
 
             if (startLine === endLine)
-                return startLine.content().substring(range.startOffset, range.endOffset);
+                return startLine.content(range.startOffset, range.endOffset);
 
-            contents.push( startLine.content().substring(range.startOffset) );
-            startLine = startLine.node.nextElementSibling._mix;
+            contents.push( startLine.content(range.startOffset) );
+            startLine = startLine.nextLine();
 
             while (startLine != endLine) {
                 contents.push( startLine.content() );
-                startLine = startLine.node.nextElementSibling._mix;
+                startLine = startLine.nextLine();
             }
 
-            contents.push( endLine.content().substring(0, range.endOffset) );
+            contents.push( endLine.content(0, range.endOffset) );
 
             return contents.join("\r\n");
         },
@@ -276,35 +314,91 @@ var InputController = function (lineBox, cursor, codeMeasure) {
 
         insert: function (position, content) {
         var lineBox = this,
-            match, tailContent,
+            match, tailContent, range,
             activeLine = this.activeLine,
             regx = /(?:\r\n)|[\r\n]|(.+)/g;
 
-            tailContent = activeLine.cut( this.columnIndex );
-            while ( match = regx.exec( content ) ) {
-                if (match[1]) {
-                    activeLine.append( match[1] );
-                } else {
-                    activeLine = new CodeLine()._mix;
-                    this.activeLine.node.parentNode.insertBefore(
-                        activeLine.node,
-                        this.activeLine.node.nextElementSibling);
-                    this.activeLine = activeLine;
-                }
+            if (position instanceof Range) {
+                range = position;
+                position = "range";
             }
 
-            this.columnIndex = activeLine.contentLength();
-            if (tailContent) activeLine.append( tailContent );
+            switch (position) {
+            case "range":
+                this.deletes(range);
 
+                // continue to insert content by reusing case "char"
+                activeLine = this.activeLine;
+
+            case "char":
+                tailContent = activeLine.deletes( this.columnIndex );
+                while ( match = regx.exec( content ) ) {
+                    if (match[1]) {
+                        activeLine.append( match[1] );
+                    } else {
+                        activeLine = new CodeLine()._mix;
+                        this.activeLine.node.parentNode.insertBefore(
+                            activeLine.node,
+                            this.activeLine.node.nextElementSibling);
+                        this.activeLine = activeLine;
+                    }
+                }
+
+                this.columnIndex = activeLine.contentLength();
+                if (tailContent) activeLine.append( tailContent );
+                break;
+
+            case "line":
+                break;
+            }
         },
 
         deletes: function (position) {
         var activeLine = this.activeLine,
-            lineContent,
+            range,
             lineBox = this;
 
+            if (position instanceof Range) {
+                range = position;
+                position = "range";
+            }
+
             switch (position) {
-            case "current":
+            case "range":
+            var startLine, line, endLine, lineNodes = [];
+
+                if (range.collapsed) return "";
+
+                startLine = locateLine(range.startContainer, this.node);
+                endLine = locateLine(range.endContainer, this.node);
+
+                lineBox.activeLine = startLine;
+                lineBox.columnIndex = range.startOffset;
+
+                if (startLine === endLine) {
+                    startLine.deletes(range.startOffset, range.endOffset);
+                    break;
+                }
+
+                startLine.deletes(range.startOffset);
+
+                line = startLine.nextLine();
+
+                // put nodes to lineNodes to be removed
+                while (line != endLine) {
+                    lineNodes.push( line.node );
+                    line = line.nextLine();
+                }
+                lineNodes.push(endLine.node);
+
+                startLine.append( endLine.content(range.endOffset) );
+
+                while (line = lineNodes.pop() )
+                    lineBox.node.removeChild( line );
+
+                break;
+
+            case "char":
                 if (lineBox.columnIndex === activeLine.contentLength()) {
                     if ( activeLine.node.nextElementSibling ) {
                         activeLine = activeLine.node.nextElementSibling._mix;
@@ -312,8 +406,11 @@ var InputController = function (lineBox, cursor, codeMeasure) {
                         activeLine.node.parentNode.removeChild( activeLine.node );
                     } else break;
                 } else {
-                    lineContent = activeLine.deleteChar( lineBox.columnIndex );
+                    activeLine.deletes( lineBox.columnIndex, lineBox.columnIndex +1 );
                 }
+                break;
+
+            case "line":
                 break;
 
             }

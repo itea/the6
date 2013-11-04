@@ -1,4 +1,6 @@
 var mix = markless.mix,
+
+    noop = function () {},
     
     browser = (function () {
         var userAgent = window.navigator.userAgent;
@@ -10,6 +12,18 @@ var mix = markless.mix,
 
     defer = function (cbk) {
         window.setTimeout(cbk, 0);
+    },
+
+    runsteps = function (args) {
+    var len = arguments.length, i = 1,
+        result = args;
+
+        for (; i < len; i++) {
+            result = arguments[i].apply( null, result );
+            if (result === false) break;
+        }
+
+        return result;
     },
 
     setText = function (node, text) {

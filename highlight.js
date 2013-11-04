@@ -11,7 +11,14 @@ var setSelectionRect = function (node, t, l, h, w, show) {
             style.width = w + "px";
             if (show) style.display = "block";
         }
-    }
+    },
+
+    clearSelection = function () {
+        setSelectionRect( this.selectionMaskers[0], "hide");
+        setSelectionRect( this.selectionMaskers[1], "hide");
+        setSelectionRect( this.selectionMaskers[2], "hide");
+        this.clearSelection = noop;
+    },
     
     CodeHighlight = mix("div.code-highlight\n div.selected\n div.selected\n div.selected", function () {
         this._mix.selectionMaskers = [ this.children[0], this.children[1], this.children[2] ];
@@ -20,14 +27,14 @@ var setSelectionRect = function (node, t, l, h, w, show) {
             this.baseX = x;
             this.baseY = y;
         },
-        clearSelection: function () {
-            setSelectionRect( this.selectionMaskers[0], "hide");
-            setSelectionRect( this.selectionMaskers[1], "hide");
-            setSelectionRect( this.selectionMaskers[2], "hide");
-        },
+
+        clearSelection: clearSelection,
+
         select: function (range, lineBox) {
         var rects = range.getClientRects(), len = rects.length, rect, rectLast, e, bRect, bulkHeigt = 0,
             lineBoxRect = lineBox.getBoundingClientRect();
+
+            this.clearSelection = clearSelection;
 
             if (len === 1) {
                 rect = rects[0];

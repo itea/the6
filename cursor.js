@@ -79,7 +79,7 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
             _mix.flash();
         }, 500);
     }, {
-        oninput: function () {}, // default dummy oninput callback function
+        oninput: noop, // default dummy oninput callback function
         hide: function () { this.node.style.display = "none"; },
         show: function () { this.node.style.display = "block"; },
         setBaseOffset: function (x, y) {
