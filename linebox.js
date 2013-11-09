@@ -1,207 +1,5 @@
-var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
-
-    var lastLineID = -1,
-
-        showCursorPosition = function (lineBox, codeline, columnIndex, forceSetLine) {
-        var pos;
-            if (lastLineID !== codeline.lineID || forceSetLine) {
-                codeMeasure.setLine( codeline.content() );
-                lastLineID = codeline.lineID;
-            }
-            pos = codeMeasure.measureByColumn( columnIndex );
-            cursor.setPosition(pos.posX, codeline.node.offsetTop + pos.posY);
-            scrollLineIntoView( codeline );
-        };
-
-    var mousedownInfo = {x:-1, y:-1},
-        controller = this,
-        codesElement = lineBox.node,
-
-        // handle mousemove event
-        selectionHandler = function (event) {
-
-        var lipre = locateLineContentElement(event.target, codesElement);
-            if (lipre == null) return;
-
-        var lirect = lipre.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
-
-        var range = controller.range;
-            if ( mousedownInfo.rangeStartNode == (lipre.firstChild || lipre) ) {
-                // the same line
-                if (pos.charIndex > mousedownInfo.position.charIndex ) {
-                    range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                    range.setEnd( lipre.firstChild || lipre, pos.charIndex );
-                } else {
-                    range.setStart( lipre.firstChild || lipre, pos.charIndex );
-                    range.setEnd( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                }
-            } else if (event.clientY - codesElement.getBoundingClientRect().top < mousedownInfo.y ) {
-                range.setStart( lipre.firstChild || lipre, pos.charIndex );
-                range.setEnd( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-            } else {
-                range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                range.setEnd( lipre.firstChild || lipre, pos.charIndex );
-            }
-            codeHighlight.select( range, codesElement );
-        };
-
-        codesElement.addEventListener("mousedown", function (event) {
-        var lipre = locateLineContentElement(event.target, codesElement);
-            if (lipre == null) return;
-
-            onevent( codesElement, "mousemove", selectionHandler);
-
-        var lirect = lipre.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
-
-        var codesRect = codesElement.getBoundingClientRect();
-            mousedownInfo.x = event.clientX - codesRect.left;
-            mousedownInfo.y = event.clientY - codesRect.top;
-            mousedownInfo.target = event.target;
-            mousedownInfo.position = pos;
-            mousedownInfo.rangeStartNode = lipre.firstChild || lipre;
-
-            if (controller.range) {
-                controller.range.detach();
-                controller.range = null;
-                codeHighlight.clearSelection();
-            }
-            controller.range = document.createRange();
-            controller.range.setStart( mousedownInfo.rangeStartNode, pos.charIndex );
-        });
-
-        onevent( document, "mouseup", function (event) {
-            offevent( codesElement, "mousemove", selectionHandler);
-
-        });
-
-        // mouse locate
-        onevent( codesElement, "mouseup", function (event) {
-        var lipre = locateLineContentElement(event.target, codesElement);
-            if (lipre == null) return;
-
-        var lirect = lipre.getBoundingClientRect(),
-            rect = codesElement.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
-
-            cursor.setPosition( pos.posX, lirect.top - rect.top + pos.posY );
-            lineBox.activeLine = lipre.parentNode._mix;
-            lineBox.columnIndex = pos.charIndex;
-        });
-
-        cursor.oninput = function (event, type) {
-        var activeLine = lineBox.activeLine;
-
-            switch ( type || event.keyCode ) {
-            case 8:  // Backspace
-                if ( ! controller.range.collapsed ) {
-                    lineBox.deletes( controller.range );
-                    codeHighlight.clearSelection();
-                    controller.range.collapse();
-                } else {
-                    lineBox.seek( -1 );
-                    lineBox.deletes("char");
-                }
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case 9: // Tab
-                lineBox.insert( "char", "\t" );
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case 13: // Enter
-                lineBox.insert( "char", "\n" );
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case 35: // End
-                lineBox.seek( activeLine.contentLength(), activeLine );
-                codeHighlight.clearSelection();
-                controller.range.collapse();
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case 36: // Home
-                lineBox.seek( 0, activeLine );
-                codeHighlight.clearSelection();
-                controller.range.collapse();
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case 46: // Delete
-                if ( ! controller.range.collapsed ) {
-                    lineBox.deletes( controller.range );
-                    codeHighlight.clearSelection();
-                    controller.range.collapse();
-                    showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                } else
-                    lineBox.deletes("char");
-                break;
-
-            case 37: // ArrowLeft
-                lineBox.seek( -1 );
-                codeHighlight.clearSelection();
-                controller.range.collapse();
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case 39: // ArrowRight
-                lineBox.seek( 1 );
-                codeHighlight.clearSelection();
-                controller.range.collapse();
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case 38: // ArrowUp
-                lineBox.seekLine( -1 );
-                codeHighlight.clearSelection();
-                controller.range.collapse();
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case 40: // ArrowDown
-                lineBox.seekLine( 1 );
-                codeHighlight.clearSelection();
-                controller.range.collapse();
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case "input":
-                lineBox.insert( "char", event.data );
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case "copy":
-                event.clipboardData.setData( "text/plain", lineBox.getSelectedContent(controller.range) );
-                break;
-
-            case "cut":
-                event.clipboardData.setData( "text/plain", lineBox.getSelectedContent(controller.range) );
-                lineBox.deletes( controller.range );
-                codeHighlight.clearSelection();
-                controller.range.collapse();
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-
-            case "paste":
-                if ( ! controller.range.collapsed ) {
-                    lineBox.insert( controller.range, event.clipboardData.getData("text/plain") );
-                    codeHighlight.clearSelection();
-                    controller.range.collapse();
-                } else {
-                    lineBox.insert("char", event.clipboardData.getData("text/plain") );
-                }
-                showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
-                break;
-            }
-        };
-
-    },
-
+var locateLine = function (node, topNode) {
     // find up to locate the CodeLine
-    locateLine = function (node, topNode) {
         while (node != topNode) {
             if (node._mix) return node._mix;
             node = node.parentNode;
@@ -276,21 +74,24 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
 
             if (offset < 0) {
                 nextline = line.previousLine();
-                if (nextline == null)
+                if (nextline == null) {
                     this.seek( 0, line);
-                else
+                    return offset;
+                } else
                     this.seek( nextline.contentLength() + offset + 1, nextline );
 
             } else if (offset > len) {
                 nextline = line.nextLine();
-                if (nextline == null)
-                    this.seek( line.contentLength(), line );
-                else
+                if (nextline == null) {
+                    this.seek( len, line );
+                    return offset - len;
+                } else
                     this.seek( offset - len - 1, nextline );
 
             } else {
                 this.columnIndex = offset;
                 this.activeLine = line;
+                return 0;
             }
         },
 

@@ -14,16 +14,29 @@ var mix = markless.mix,
         window.setTimeout(cbk, 0);
     },
 
-    runsteps = function (args) {
-    var len = arguments.length, i = 1,
-        result = args;
+    buildsteps = function () {
+    var len = arguments.length, i = 0,
+        fns = [];
 
         for (; i < len; i++) {
-            result = arguments[i].apply( null, result );
-            if (result === false) break;
+            fns.push( arguments[i] );
         }
 
-        return result;
+        return function () {
+        var len = arguments.length, i = 0,
+            result = [];
+
+            for (; i < len; i++) {
+                result.push (arguments[i]);
+            }
+
+            for (i = 0, len = fns.length; i < len; i++) {
+                result = fns[i].apply(this, result);
+                if ( !result ) break;
+            }
+
+            return result;
+        };
     },
 
     setText = function (node, text) {

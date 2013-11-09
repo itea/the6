@@ -5,7 +5,7 @@
 	<title>TITLE</title>
 	<style type="text/css">
 .code-box {position: relative; overflow:auto; padding: 0 0 0 3em;}
-.code-box {font: normal normal normal 14px/17px monospace; cursor:text;}
+.code-box {font: normal normal normal 14px/17px monospace !important; cursor:text;}
 
 .code-box .code-measure {position:absolute; height: 0; visibility: hidden; overflow:hidden; margin:0;}
 .code-box .code-measure pre {white-space: pre-wrap; margin:0;padding:0; position:static;}
@@ -22,7 +22,7 @@
 .codes ::-moz-selection {background-color: transparent;}
 .codes li {margin: 0; padding:0; /*white-space: pre;*/ border:none; outline:none;}
 .codes li {counter-increment: lineNumber;}
-.codes .nu {position:absolute; left:0px;width:3em;background-color:#eee; /*text-align:right;*/}
+.codes .nu {position:absolute; left:0px;width:3em;/*text-align:right;*/}
 .codes .nu {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
 .codes .nu:after {content: counter(lineNumber);}
 .codes pre:empty:after {content:" ";}
@@ -30,6 +30,7 @@
 	</style>
     <script language="javascript" src="markless.js"></script>
     <script language="javascript" src="basic.js"></script>
+    <script language="javascript" src="inputcontroller.js"></script>
     <script language="javascript" src="linebox.js"></script>
     <script language="javascript" src="codebox.js"></script>
     <script language="javascript" src="cursor.js"></script>
@@ -43,7 +44,7 @@ var fn = function () {
     var inpagestyle = document.querySelector("style").textContent;
 
     var coderBox = createCoderBox(inpagestyle);
-    document.getElementById("cnt").appendChild( coderBox.boxElement );
+    document.body.appendChild( coderBox.boxElement );
 };
 window.onload = function() {
     fn();
@@ -51,7 +52,6 @@ window.onload = function() {
 	</script>
 </head>
 <body>
-<div id="cnt"></div>
 <!--<ol id="codes" class="codes">
 <li>window.onload = function() {</li>
 <li>    fn();</li>

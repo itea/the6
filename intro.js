@@ -1,2 +1,2 @@
-var createCoderBox = (function () {
+window.createCoderBox = (function () {
 

@@ -98,6 +98,16 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
         },
         focus: function () {
             this.node.children[0].focus();
+        },
+        fakeSelection: function (x, y) {
+        var textarea = this.node.children[0];
+            textarea.value = " ";
+            textarea.focus();
+            textarea.select();
+            this.node.style.width = "100px";
+            this.node.style.height = "100px";
+            this.node.style.left = parseInt(this.node.style.left) - 25 + "px";
+            this.node.style.top = parseInt(this.node.style.top) - 5 + "px";
         }
     });
 
