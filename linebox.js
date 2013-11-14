@@ -19,6 +19,7 @@ var locateLine = function (node, topNode) {
     var _mix = this._mix;
 
         _mix.inputController = new InputController(_mix, cursor, codeMeasure, codeHighlight);
+        cursor.inputController = this._mix.inputController;
 
     }, {
         setCode: function (src) {

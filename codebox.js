@@ -11,10 +11,12 @@ var CodeBox = mix("div.code-box spellcheck='false'", function (id) {
 
         codesElement = _mix.lineBox.node;
 
+        // this.appendChild(markless("div.menubar > a href='javascript:void 0;' 'File'"));
         this.appendChild(_mix.lineBox.node);
         this.appendChild(_mix.cursor.node);
         this.appendChild(_mix.codeHighlight.node);
         this.appendChild(_mix.codeMeasure.node);
+        this.appendChild(markless("div.nubar"));
 
         window.setTimeout( function () { // after DOM rendered
             _mix.codeMeasure.setLine("");

@@ -1,5 +1,7 @@
 var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
 
+    this.range = document.createRange();
+
     var lastLineID = -1,
 
         showCursorPosition = function (lineBox, codeline, columnIndex, forceSetLine) {
@@ -87,6 +89,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
 
         // mouse locate
         onevent( codesElement, "mouseup", function (event) {
+            if (event.button !== 0) return; // Left button only
         var lipre = locateLineContentElement(event.target, codesElement);
             if (lipre == null) return;
 
@@ -100,6 +103,9 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         });
 
         onevent( codesElement, "contextmenu", function (event) {
+        var lipre = locateLineContentElement(event.target, codesElement);
+            if (lipre == null) return;
+            cursor.beforeContextmenuPopup(event, !(controller.range || {collapsed: true}).collapsed);
         });
 
         cursor.oninput = buildsteps(
@@ -110,6 +116,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             switch ( type || event.keyCode ) {
             case 8:  // Backspace
             case 46: // Delete
+            case "delete":
                 lineBox.deletes( controller.range );
                 break;
 
@@ -211,6 +218,12 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             case "paste":
                 lineBox.insert("char", event.clipboardData.getData("text/plain") );
                 showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
+                break;
+
+            case "select": // select all
+                controller.range.setStart(lineBox.node.firstElementChild.querySelector("pre"), 0);
+                controller.range.setEnd(lineBox.node.lastElementChild.querySelector("pre"), 0);
+                codeHighlight.select( controller.range, codesElement );
                 break;
             }
         } );

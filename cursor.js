@@ -4,6 +4,8 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
 
         _mix.baseX = _mix.baseY = 0;
 
+        textarea.value = " ";
+
 /*                      IE<9    IE9+    FF      OPERA   SAFARI  CHROME
  * input                        YES     YES     YES     YES     YES
  * textInput                                            YES     YES
@@ -13,21 +15,21 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
 */
         // TODO: support browsers other than Chrome
         if (browser === "CHROME" || browser === "SAFARI" || browser === "IE9+")
-            textarea.addEventListener(browser === "IE9+" ? "textinput" : "textInput", function (event) {
+            onevent(textarea, browser === "IE9+" ? "textinput" : "textInput", function (event) {
             // event.data = event.target.value;
             _mix.oninput.call(this, event, "input");
-            this.value = "";
+            textarea.value = "";
         });
 
         // A bug in FF that press ESC will trigger input event with last content, not know how to fix it, just leave it.
         if (browser === "FF" || browser === "OPERA")
-            textarea.addEventListener("input", function (event) {
+            onevent(textarea, "input", function (event) {
             event.data = event.target.value;
             _mix.oninput.call(this, event, "input");
-            this.value = "";
+            textarea.value = "";
         });
 
-        textarea.addEventListener("blur", function (event) {
+        onevent(textarea, "blur", function (event) {
             _mix.hide();
         });
 
@@ -46,7 +48,24 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
             event.preventDefault();
         });
 
-        textarea.addEventListener("keydown", function (event) {
+        onevent(textarea, "select", function (event) {
+            _mix.oninput.call(this, event, "select"); // select all
+            // clean input element, prevent infinit select event
+            event.target.selectionEnd = 0;
+            event.preventDefault();
+        });
+
+        onevent(textarea, "input", function (event) {
+            console.log("input"+ textarea.value + textarea.value.length);
+            if (textarea.value.length === 0)
+                _mix.oninput.call(this, event, "delete"); // delete
+        });
+
+        onevent(textarea, "contextmenu", function (event) {
+            _mix.beforeContextmenuPopup(event, _mix.inputController && !_mix.inputController.range.collapsed);
+        });
+
+        onevent(textarea, "keydown", function (event) {
             switch (event.keyCode) {
             case 8:  // Backspace
             case 9:  // Tab
@@ -92,22 +111,46 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
             this.show();
             this.focus();
         },
-        flash: function () {
+        flash: function (command) {
             var style = this.node.style;
+            if (command) {
+                if (command === "start") style.borderLeftWidth = "1px";
+                else if (command === "stop") style.borderLeftWidth = "0px";
+            }
             style.borderLeftColor = style.borderLeftColor.length < 6 ? "transparent" : "black";
         },
         focus: function () {
             this.node.children[0].focus();
         },
-        fakeSelection: function (x, y) {
-        var textarea = this.node.children[0];
+        beforeContextmenuPopup: function (event, selected) {
+        var textarea = this.node.children[0],
+            style = this.node.style,
+            posX = style.left, posY = style.top;
+
+            this.flash("stop");
+            this.show();
             textarea.value = " ";
             textarea.focus();
-            textarea.select();
-            this.node.style.width = "100px";
-            this.node.style.height = "100px";
-            this.node.style.left = parseInt(this.node.style.left) - 25 + "px";
-            this.node.style.top = parseInt(this.node.style.top) - 5 + "px";
+            selected && textarea.select();
+            style.width = "80px";
+            style.left = event.clientX - 5 + "px";
+            style.top = event.clientY - 5 + "px";
+
+        var that = this,
+            cleaning = function () {
+            var textarea = that.node.children[0],
+                style = that.node.style;
+
+                style.left = posX;
+                style.top = posY;
+                offevent(textarea, "blur", cleaning);
+                that.node.style.width = "0px";
+                textarea.value = " ";
+                that.flash("start");
+            };
+
+            //onevent(textarea, "blur", cleaning);
+            defer(cleaning);
         }
     });
 

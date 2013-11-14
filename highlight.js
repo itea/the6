@@ -41,7 +41,7 @@ var setSelectionRect = function (node, t, l, h, w, show) {
                 setSelectionRect( this.selectionMaskers[1], "hide");
                 setSelectionRect( this.selectionMaskers[2], "hide");
                 setSelectionRect( this.selectionMaskers[0],
-                    rect.top - this.baseY - lineBoxRect.top,
+                    rect.top - this.baseY + lineBoxRect.top,
                     rect.left + this.baseX - lineBoxRect.left,
                     rect.height,
                     rect.width,
@@ -50,7 +50,7 @@ var setSelectionRect = function (node, t, l, h, w, show) {
                 bRect = range.getBoundingClientRect();
                 rect = rects[0];
                 setSelectionRect( this.selectionMaskers[0],
-                    rect.top - this.baseY - lineBoxRect.top,
+                    rect.top - this.baseY + lineBoxRect.top,
                     rect.left + this.baseX - lineBoxRect.left,
                     rect.height,
                     bRect.width - rect.left + bRect.left,
@@ -58,7 +58,7 @@ var setSelectionRect = function (node, t, l, h, w, show) {
                 
                 rectLast = rects[ len -1 ];
                 setSelectionRect( this.selectionMaskers[2],
-                    rectLast.top - this.baseY - lineBoxRect.top,
+                    rectLast.top - this.baseY + lineBoxRect.top,
                     rectLast.left + this.baseX - lineBoxRect.left,
                     rectLast.height,
                     rectLast.width,
@@ -68,7 +68,7 @@ var setSelectionRect = function (node, t, l, h, w, show) {
                 if (bulkHeight <= 0) return;
 
                 setSelectionRect( this.selectionMaskers[1],
-                    rect.top + rect.height - this.baseY - lineBoxRect.top,
+                    rect.top + rect.height - this.baseY + lineBoxRect.top,
                     rectLast.left + this.baseX - lineBoxRect.left,
                     bulkHeight,
                     bRect.right - rectLast.left,
