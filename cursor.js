@@ -2,7 +2,7 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
     var _mix = this._mix,
         textarea = this.children[0];
 
-        _mix.baseX = _mix.baseY = 0;
+        _mix.baseX = _mix.baseY = _mix.scrollX = _mix.scrollY = 0;
 
         textarea.value = " ";
 
@@ -62,7 +62,8 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
         });
 
         onevent(textarea, "contextmenu", function (event) {
-            _mix.beforeContextmenuPopup(event, _mix.inputController && !_mix.inputController.range.collapsed);
+            // _mix.beforeContextmenuPopup(event, _mix.inputController && !_mix.inputController.range.collapsed);
+            _mix.oninput.call(this, event, "contextmenu");
         });
 
         onevent(textarea, "keydown", function (event) {
@@ -94,6 +95,14 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
             }
         });
 
+        onevent("horizontal-scroll", function (event, offset) {
+            _mix.scrollX = offset;
+        });
+
+        onevent("vertical-scroll", function (event, offset) {
+            _mix.scrollY = offset;
+        });
+
         _mix.intervalHandler = window.setInterval(function () {
             _mix.flash();
         }, 500);
@@ -106,8 +115,8 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
             this.baseY = y;
         },
         setPosition: function (x, y) {
-            if (x != null) this.node.style.left = this.baseX + x + "px";
-            if (y != null) this.node.style.top = this.baseY + y + "px";
+            if (x != null) this.node.style.left = this.baseX - this.scrollX + x + "px";
+            if (y != null) this.node.style.top = this.baseY - this.scrollY + y + "px";
             this.show();
             this.focus();
         },
@@ -122,7 +131,7 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
         focus: function () {
             this.node.children[0].focus();
         },
-        beforeContextmenuPopup: function (event, selected) {
+        beforeContextmenuPopup: function (x, y, selected) {
         var textarea = this.node.children[0],
             style = this.node.style,
             posX = style.left, posY = style.top;
@@ -133,8 +142,8 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
             textarea.focus();
             selected && textarea.select();
             style.width = "80px";
-            style.left = event.clientX - 5 + "px";
-            style.top = event.clientY - 5 + "px";
+            style.left = this.baseX + x - 5 + "px";
+            style.top = this.baseY + y - 5 + "px";
 
         var that = this,
             cleaning = function () {
@@ -143,8 +152,8 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
 
                 style.left = posX;
                 style.top = posY;
+                style.width = "0px";
                 offevent(textarea, "blur", cleaning);
-                that.node.style.width = "0px";
                 textarea.value = " ";
                 that.flash("start");
             };

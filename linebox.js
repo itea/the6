@@ -16,11 +16,25 @@ var locateLine = function (node, topNode) {
     },
 
     LineBox = mix("ol.codes", function (parentNode, cursor, codeMeasure, codeHighlight) {
-    var _mix = this._mix;
+    var _mix = this._mix,
+        thisNode = this;
+
+        _mix.nuCssRule = (function () {
+            document.styleSheets[0].insertRule(".codes div.nu {}", document.styleSheets[0].length);
+            return document.styleSheets[0].cssRules[0];
+        }());
 
         _mix.inputController = new InputController(_mix, cursor, codeMeasure, codeHighlight);
         cursor.inputController = this._mix.inputController;
 
+        onevent("horizontal-scroll", function (event, offset) {
+            thisNode.style.left = -offset + "px";
+            _mix.nuCssRule.style.left = -thisNode.offsetLeft + "px";
+        });
+
+        onevent("vertical-scroll", function (event, offset) {
+            thisNode.style.top = -offset + "px";
+        });
     }, {
         setCode: function (src) {
         var start = 0, lastIdx, linenumber = 1,

@@ -50,8 +50,42 @@ var mix = markless.mix,
         return node.innerText || node.textContent;
     },
 
+    emit = (function () {
+    var emit = function (eventType) {
+        var handlers = handlersIndex[ eventType ],
+            args = Array.prototype.slice.call(arguments, 1);
+
+            if ( !handlers || handlers.length === 0) return;
+            defer(function () {
+            var i = 0, target = null;
+
+                if (args[0] && args[0] instanceof window.Event) target = args[0].target;
+                for (; i < handlers.length; i++) {
+                    (handlers[i] || noop).apply(target, args);
+                }
+            });
+        },
+
+        handlersIndex = {};
+
+        emit.addEventListener = function (eventType, callback, prepend) {
+        var handlers = handlersIndex[ eventType ];
+            if ( !handlers ) handlers = handlersIndex[ eventType ] = [];
+            prepend ? handlers.unshift(callback) : handlers.push(callback);
+        };
+
+        return emit;
+    }()),
+
     onevent = function (node, eventTypes, callback, capture) {
-        // TODO
+        "use strict";
+
+        if (typeof node === "string") {
+            node = emit;
+            eventTypes = arguments[0];
+            callback = arguments[1];
+            capture = arguments[2];
+        }
         node.addEventListener(eventTypes, callback, capture);
     },
 
@@ -63,7 +97,7 @@ var mix = markless.mix,
     scrollLineIntoView = function (codeline) {
         var node = codeline.node, boxNode,
             lineOffsetTop, boxScrollTop, boxClientHeight, lineOffsetHeight;
-        if (node.scrollIntoViewIfNeeded) node.scrollIntoViewIfNeeded(false);
+        if (false && node.scrollIntoViewIfNeeded) node.scrollIntoViewIfNeeded(false);
         else { // Browser that doesnt support scrollIntoViewIfNeeded()
             boxNode = node.parentNode.parentNode;
             lineOffsetTop = node.offsetTop;

@@ -103,9 +103,11 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         });
 
         onevent( codesElement, "contextmenu", function (event) {
-        var lipre = locateLineContentElement(event.target, codesElement);
+        var lipre = locateLineContentElement(event.target, codesElement), rect;
             if (lipre == null) return;
-            cursor.beforeContextmenuPopup(event, !(controller.range || {collapsed: true}).collapsed);
+
+            rect = codesElement.getBoundingClientRect();
+            cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, !(controller.range || {collapsed: true}).collapsed);
         });
 
         cursor.oninput = buildsteps(
@@ -133,6 +135,12 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             case "paste":
                 lineBox.insert( controller.range, event.clipboardData.getData("text/plain") );
                 break;
+
+            case "contextmenu":
+                rect = codesElement.getBoundingClientRect();
+                cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, true);
+                // skip clearSelection
+                return false;
 
             case "input":
                 lineBox.deletes( controller.range );
@@ -168,7 +176,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         },
 
         function (event, type) {
-        var activeLine = lineBox.activeLine;
+        var activeLine = lineBox.activeLine, rect;
 
             switch ( type || event.keyCode ) {
             case 8:  // Backspace
@@ -224,6 +232,11 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
                 controller.range.setStart(lineBox.node.firstElementChild.querySelector("pre"), 0);
                 controller.range.setEnd(lineBox.node.lastElementChild.querySelector("pre"), 0);
                 codeHighlight.select( controller.range, codesElement );
+                break;
+
+            case "contextmenu":
+                rect = codesElement.getBoundingClientRect();
+                cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, false);
                 break;
             }
         } );

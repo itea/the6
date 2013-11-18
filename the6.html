@@ -5,35 +5,42 @@
 	<title>TITLE</title>
 	<style type="text/css">
 html, body {padding: 0; margin: 0}
-.code-box {position: relative; overflow:auto; padding: 0;}
+.code-box {position: relative; overflow:hidden; padding: 0;}
 .code-box {font: normal normal normal 14px/17px monospace; cursor:auto;}
+.code-box {width: 800px; height:400px; background-color: #dee;}
 
 .code-box .code-measure {position:absolute; height: 0; visibility: hidden; overflow:hidden; margin:0 0 0 36px;}
 .code-box .code-measure pre {white-space: pre-wrap; margin:0;padding:0; position:static;}
 .code-box .code-measure span {}
 
-.code-box .code-cursor {position:absolute; border-left:1px solid black; height: 15px; width: 0px; overflow:hidden; cursor:text;}
+.code-box .code-cursor {position:absolute; border-left:1px solid black; height: 15px; width: 0px; overflow:hidden; cursor:text;z-index:10;}
 .code-box .code-cursor input {border: none; outline: none; padding: 0; margin:0;}
-/*.code-box .code-cursor input {opacity:1.01; background-color:green;} */
+/*.code-box .code-cursor input {opacity:1.01; background-color:green;}*/
 .code-box .code-highlight {position:absolute; top:0;left:0;}
-.code-box .code-highlight .selected {position:absolute; background-color: rgb(132, 255, 172);z-index:-1;}
-.code-box .nubar {position:absolute; top:0; left:0; height: 100%; width: 36px; background-color:#eee; z-index: -9;}
+.code-box .code-highlight .selected {position:absolute; background-color: rgb(132, 255, 172); z-index:1;}
+.code-box .nubar {position:absolute; top:0; left:0; height: 100%; width: 36px; background-color:#eee; z-index: 10;}
 .code-box .menubar {border-bottom: 1px dotted silver; position:relative; background-color:white;cursor:auto;}
 .code-box .menubar a {padding: 0 6px; display: inline-block; text-decoration: none;color: gray;}
 .code-box .menubar a:hover {color: white; background-color: gray;}
+
+.code-box .scroll {position:absolute; z-index: 10;}
+.code-box .scroll.horizontal {right:0;bottom:0;overflow-x:scroll;}
+.code-box .scroll.vertical {right:0;bottom:0;overflow-y:scroll;}
+.code-box .scroll div {width: 1px; height: 1px;}
 
 .codes {list-style: none outside; position:relative;padding:0; margin:0 0 0 36px;}
 .codes {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
 .codes ::selection {background-color: transparent;}
 .codes ::-moz-selection {background-color: transparent;}
-.codes li {margin: 0; padding:0; /*white-space: pre;*/ border:none; outline:none;}
+.codes li {margin: 0; padding:0; /*white-space: pre;*/ border:none; outline:none; position:relative;}
 .codes li {counter-increment: lineNumber;}
-.codes .nu {position:absolute; left:-36px;width:32px; padding-right: 4px;text-align:right; color:#806060;}
+.codes .nu {position:absolute; left:-36px;width:32px; padding-right: 4px;text-align:right; color:#806060;z-index:11;}
 .codes .nu {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
 .codes .nu:after {content: counter(lineNumber);}
-.codes li:hover .nu {color: black;}
 .codes pre:empty:after {content:" ";}
-.codes pre {margin: 0; padding: 0; border: none; white-space: pre-wrap;}
+.codes pre {margin: 0; padding: 0; border: none; z-index: 9; position:relative;}
+/*.codes pre {white-space: pre-wrap;}*/
+#bb {padding:20px;}
 	</style>
     <script language="javascript" src="markless.js"></script>
     <script language="javascript" src="basic.js"></script>
@@ -51,7 +58,7 @@ var fn = function () {
     var inpagestyle = document.querySelector("style").textContent;
 
     var coderBox = createCoderBox(inpagestyle);
-    document.body.appendChild( coderBox.boxElement );
+    document.getElementById("bb").appendChild( coderBox.boxElement );
 };
 window.onload = function() {
     fn();
@@ -59,11 +66,6 @@ window.onload = function() {
 	</script>
 </head>
 <body>
-<!--<ol id="codes" class="codes">
-<li>window.onload = function() {</li>
-<li>    fn();</li>
-<li>};</li>
-<ol>
--->
+<div id="bb"></div>
 </body>
 </html>
