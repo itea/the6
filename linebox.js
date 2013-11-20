@@ -8,7 +8,7 @@ var locateLine = function (node, topNode) {
     },
 
     locateLineContentElement = function (lipre, topNode) {
-        while (lipre != topNode) {
+        while (lipre && lipre != topNode) {
             if (lipre.tagName === "PRE") return lipre;
             lipre = lipre.parentNode;
         }
@@ -20,20 +20,24 @@ var locateLine = function (node, topNode) {
         thisNode = this;
 
         _mix.nuCssRule = (function () {
-            document.styleSheets[0].insertRule(".codes div.nu {}", document.styleSheets[0].length);
-            return document.styleSheets[0].cssRules[0];
+            document.styleSheets[0].insertRule(".codes div.nu {}", document.styleSheets[0].cssRules.length);
+            return document.styleSheets[0].cssRules[ document.styleSheets[0].cssRules.length -1 ];
         }());
 
         _mix.inputController = new InputController(_mix, cursor, codeMeasure, codeHighlight);
-        cursor.inputController = this._mix.inputController;
+        // cursor.inputController = this._mix.inputController;
 
         onevent("horizontal-scroll", function (event, offset) {
-            thisNode.style.left = -offset + "px";
-            _mix.nuCssRule.style.left = -thisNode.offsetLeft + "px";
+            // thisNode.style.left = -offset + "px";
+            _mix.nuCssRule.style.left = offset -thisNode.offsetLeft + "px";
         });
 
         onevent("vertical-scroll", function (event, offset) {
-            thisNode.style.top = -offset + "px";
+            // thisNode.style.top = -offset + "px";
+        });
+
+        onevent("view-resize", function (width, height) {
+            thisNode.style.minWidth = width + "px";
         });
     }, {
         setCode: function (src) {
@@ -93,7 +97,7 @@ var locateLine = function (node, topNode) {
                     this.seek( 0, line);
                     return offset;
                 } else
-                    this.seek( nextline.contentLength() + offset + 1, nextline );
+                    return this.seek( nextline.contentLength() + offset + 1, nextline );
 
             } else if (offset > len) {
                 nextline = line.nextLine();
@@ -101,7 +105,7 @@ var locateLine = function (node, topNode) {
                     this.seek( len, line );
                     return offset - len;
                 } else
-                    this.seek( offset - len - 1, nextline );
+                    return this.seek( offset - len - 1, nextline );
 
             } else {
                 this.columnIndex = offset;

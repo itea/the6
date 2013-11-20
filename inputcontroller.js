@@ -12,7 +12,6 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             }
             pos = codeMeasure.measureByColumn( columnIndex );
             cursor.setPosition(pos.posX, codeline.node.offsetTop + pos.posY);
-            scrollLineIntoView( codeline );
         };
 
     var mousedownInfo = {x:-1, y:-1},
@@ -22,10 +21,13 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         lastlipre,
 
         // handle mousemove event
-        selectionHandler = function (event) {
+        mousemoveHandler = function (event) {
 
         var lipre = locateLineContentElement(event.target, codesElement);
-            if (lipre == null) return;
+            if (lipre == null) { // curosr out of the lineBox
+                console.log(event.clientX);
+                return;
+            }
 
         var lirect = lipre.getBoundingClientRect(),
             pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
@@ -53,6 +55,8 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
                 range.setEnd( lipre.firstChild || lipre, pos.charIndex );
             }
             codeHighlight.select( range, codesElement );
+
+            bye(event, true, true);
         };
 
         codesElement.addEventListener("mousedown", function (event) {
@@ -61,7 +65,8 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         var lipre = locateLineContentElement(event.target, codesElement);
             if (lipre == null) return;
 
-            onevent( codesElement, "mousemove", selectionHandler);
+            // onevent( codesElement, "mousemove", mousemoveHandler);
+            onevent( document, "mousemove", mousemoveHandler);
 
         var lirect = lipre.getBoundingClientRect(),
             pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
@@ -80,10 +85,13 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             }
             controller.range = document.createRange();
             controller.range.setStart( mousedownInfo.rangeStartNode, pos.charIndex );
+
+            bye(event, true);
         });
 
         onevent( document, "mouseup", function (event) {
-            offevent( codesElement, "mousemove", selectionHandler);
+            // offevent( codesElement, "mousemove", mousemoveHandler);
+            offevent( document, "mousemove", mousemoveHandler);
 
         });
 
@@ -111,6 +119,21 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         });
 
         cursor.oninput = buildsteps(
+        function (event, type) {
+            // check textarea size
+        var oldWidth = lineBox.node.clientWidth,
+            oldHeight = lineBox.node.clientHeight;
+
+            defer(function () {
+            var width = lineBox.node.clientWidth,
+                height = lineBox.node.clientHeight,
+                // x == 1, width changed; x == 2, height changed; x == 3, both changed
+                x = (oldWidth === width ? 0 : 1) | (oldHeight === height ? 0: 2);
+
+                if (x) emit.fire("textarea-resize", width, height, x);
+            });
+            return [event, type];
+        },
         function (event, type) {
             // process selection
             if ( controller.range.collapsed ) return [event, type];
@@ -229,8 +252,11 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
                 break;
 
             case "select": // select all
-                controller.range.setStart(lineBox.node.firstElementChild.querySelector("pre"), 0);
-                controller.range.setEnd(lineBox.node.lastElementChild.querySelector("pre"), 0);
+            var node = lineBox.node.firstElementChild.querySelector("pre");
+                controller.range.setStart(node.firstChild || node, 0);
+                node = lineBox.node.lastElementChild.querySelector("pre");
+                if (node.lastChild) node = node.lastChild;
+                controller.range.setEnd(node, node.length || 0);
                 codeHighlight.select( controller.range, codesElement );
                 break;
 

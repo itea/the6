@@ -21,7 +21,23 @@ var setSelectionRect = function (node, t, l, h, w, show) {
     },
     
     CodeHighlight = mix("div.code-highlight\n div.selected\n div.selected\n div.selected", function () {
+    var node = this;
+
         this._mix.selectionMaskers = [ this.children[0], this.children[1], this.children[2] ];
+
+        /*
+        onevent("horizontal-scroll", function (event, offset) {
+            node.style.left = -offset + "px";
+        });
+
+        onevent("vertical-scroll", function (event, offset) {
+            node.style.top = -offset + "px";
+        });
+        */
+
+        onevent("textarea-resize", function (width, height, x) {
+            if (x & 1) node.style.width = width + "px";
+        });
     }, {
         setBaseOffset: function (x, y) {
             this.baseX = x;

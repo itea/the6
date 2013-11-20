@@ -5,12 +5,18 @@
 	<title>TITLE</title>
 	<style type="text/css">
 html, body {padding: 0; margin: 0}
-.code-box {position: relative; overflow:hidden; padding: 0;}
+.boxwrap {width: 800px; height:400px;overflow:hidden; position:relative;}
+.boxwrap {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
+.boxwrap .scroll {position:absolute; z-index: 10;}
+.boxwrap .scroll.horizontal {right:0;bottom:0;overflow-x:scroll;}
+.boxwrap .scroll.vertical {right:0;bottom:0;overflow-y:scroll;}
+.boxwrap .scroll div {width: 1px; height: 1px;}
+
+.code-box {position: relative; padding: 0 30px 30px 0; margin: 0 -30px -30px 0; background-color: #dee; overflow:auto; height:100%; width:100%;}
 .code-box {font: normal normal normal 14px/17px monospace; cursor:auto;}
-.code-box {width: 800px; height:400px; background-color: #dee;}
 
 .code-box .code-measure {position:absolute; height: 0; visibility: hidden; overflow:hidden; margin:0 0 0 36px;}
-.code-box .code-measure pre {white-space: pre-wrap; margin:0;padding:0; position:static;}
+.code-box .code-measure pre {/*white-space: pre-wrap;*/ margin:0;padding:0; position:static;}
 .code-box .code-measure span {}
 
 .code-box .code-cursor {position:absolute; border-left:1px solid black; height: 15px; width: 0px; overflow:hidden; cursor:text;z-index:10;}
@@ -18,17 +24,13 @@ html, body {padding: 0; margin: 0}
 /*.code-box .code-cursor input {opacity:1.01; background-color:green;}*/
 .code-box .code-highlight {position:absolute; top:0;left:0;}
 .code-box .code-highlight .selected {position:absolute; background-color: rgb(132, 255, 172); z-index:1;}
-.code-box .nubar {position:absolute; top:0; left:0; height: 100%; width: 36px; background-color:#eee; z-index: 10;}
+.code-box .nubar {position:absolute; top:0; left:0; min-height: 100%; width: 36px; background-color:#eee; z-index: 10;}
 .code-box .menubar {border-bottom: 1px dotted silver; position:relative; background-color:white;cursor:auto;}
 .code-box .menubar a {padding: 0 6px; display: inline-block; text-decoration: none;color: gray;}
 .code-box .menubar a:hover {color: white; background-color: gray;}
 
-.code-box .scroll {position:absolute; z-index: 10;}
-.code-box .scroll.horizontal {right:0;bottom:0;overflow-x:scroll;}
-.code-box .scroll.vertical {right:0;bottom:0;overflow-y:scroll;}
-.code-box .scroll div {width: 1px; height: 1px;}
-
-.codes {list-style: none outside; position:relative;padding:0; margin:0 0 0 36px;}
+.codes:empty {display:block;}
+.codes {list-style: none outside; position:relative;padding:0 0 0 0; margin:0 31px 0 36px; display: inline-block;}
 .codes {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
 .codes ::selection {background-color: transparent;}
 .codes ::-moz-selection {background-color: transparent;}

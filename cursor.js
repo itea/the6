@@ -2,7 +2,7 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
     var _mix = this._mix,
         textarea = this.children[0];
 
-        _mix.baseX = _mix.baseY = _mix.scrollX = _mix.scrollY = 0;
+        _mix.baseX = _mix.baseY = 0;
 
         textarea.value = " ";
 
@@ -56,7 +56,7 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
         });
 
         onevent(textarea, "input", function (event) {
-            console.log("input"+ textarea.value + textarea.value.length);
+            // console.log("input"+ textarea.value + textarea.value.length);
             if (textarea.value.length === 0)
                 _mix.oninput.call(this, event, "delete"); // delete
         });
@@ -95,14 +95,6 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
             }
         });
 
-        onevent("horizontal-scroll", function (event, offset) {
-            _mix.scrollX = offset;
-        });
-
-        onevent("vertical-scroll", function (event, offset) {
-            _mix.scrollY = offset;
-        });
-
         _mix.intervalHandler = window.setInterval(function () {
             _mix.flash();
         }, 500);
@@ -115,10 +107,17 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
             this.baseY = y;
         },
         setPosition: function (x, y) {
-            if (x != null) this.node.style.left = this.baseX - this.scrollX + x + "px";
-            if (y != null) this.node.style.top = this.baseY - this.scrollY + y + "px";
+            if (x != null) {
+                this.x = this.baseX + x;
+                this.node.style.left = this.x + "px";
+            }
+            if (y != null) {
+                this.y = this.baseY + y;
+                this.node.style.top = this.y + "px";
+            }
+            emit("cursor-position", this.x, this.y);
             this.show();
-            this.focus();
+            if (document.activeElement != this) this.focus();
         },
         flash: function (command) {
             var style = this.node.style;
@@ -153,12 +152,11 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
                 style.left = posX;
                 style.top = posY;
                 style.width = "0px";
-                offevent(textarea, "blur", cleaning);
-                textarea.value = " ";
+                textarea.value = "\t"; // hack, prevent select all after cancel contextmenu
+                textarea.select();
                 that.flash("start");
             };
 
-            //onevent(textarea, "blur", cleaning);
             defer(cleaning);
         }
     });

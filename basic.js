@@ -10,8 +10,8 @@ var mix = markless.mix,
         return "UNKNOWN";
     })(),
 
-    defer = function (cbk) {
-        window.setTimeout(cbk, 0);
+    defer = function (cbk, t) {
+        window.setTimeout(cbk, t || 0);
     },
 
     buildsteps = function () {
@@ -50,6 +50,7 @@ var mix = markless.mix,
         return node.innerText || node.textContent;
     },
 
+    // pub/sub
     emit = (function () {
     var emit = function (eventType) {
         var handlers = handlersIndex[ eventType ],
@@ -68,6 +69,20 @@ var mix = markless.mix,
 
         handlersIndex = {};
 
+        // fire immediatly
+        emit.fire = function (eventType) {
+        var handlers = handlersIndex[ eventType ],
+            args = Array.prototype.slice.call(arguments, 1),
+            i = 0, target = null;
+
+            if ( !handlers || handlers.length === 0) return;
+
+            if (args[0] && args[0] instanceof window.Event) target = args[0].target;
+            for (; i < handlers.length; i++) {
+                (handlers[i] || noop).apply(target, args);
+            }
+        };
+
         emit.addEventListener = function (eventType, callback, prepend) {
         var handlers = handlersIndex[ eventType ];
             if ( !handlers ) handlers = handlersIndex[ eventType ] = [];
@@ -81,10 +96,10 @@ var mix = markless.mix,
         "use strict";
 
         if (typeof node === "string") {
-            node = emit;
-            eventTypes = arguments[0];
-            callback = arguments[1];
             capture = arguments[2];
+            callback = arguments[1];
+            eventTypes = arguments[0];
+            node = emit;
         }
         node.addEventListener(eventTypes, callback, capture);
     },
@@ -94,21 +109,8 @@ var mix = markless.mix,
         node.removeEventListener(eventTypes, callback);
     },
 
-    scrollLineIntoView = function (codeline) {
-        var node = codeline.node, boxNode,
-            lineOffsetTop, boxScrollTop, boxClientHeight, lineOffsetHeight;
-        if (false && node.scrollIntoViewIfNeeded) node.scrollIntoViewIfNeeded(false);
-        else { // Browser that doesnt support scrollIntoViewIfNeeded()
-            boxNode = node.parentNode.parentNode;
-            lineOffsetTop = node.offsetTop;
-            lineOffsetHeight = node.offsetHeight;
-            boxScrollTop = boxNode.scrollTop;
-            boxClientHeight = boxNode.clientHeight;
-
-            if (boxScrollTop - lineOffsetTop > 0)
-                boxNode.scrollTop = lineOffsetTop;
-            else if (lineOffsetTop - boxClientHeight - boxScrollTop + lineOffsetHeight > 0)
-                boxNode.scrollTop = lineOffsetTop + lineOffsetHeight - boxClientHeight;
-        }
+    bye = function (event, a, b) {
+        if (a) event.preventDefault();
+        if (b) event.stopPropagation();
     };
 

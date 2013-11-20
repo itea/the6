@@ -10,7 +10,14 @@ var mixresult = function () {
         };
     },
 
-    CodeMeasure = mix("div.code-measure >pre", {
+    CodeMeasure = mix("div.code-measure >pre", function () {
+    var node = this;
+
+        onevent("textarea-resize", function (width, height, x) {
+            // node.style.width = width + "px";
+        });
+
+    },{
         lineContent: {length: -1},
 
         setLine: function (line) {
