@@ -56,13 +56,11 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
         });
 
         onevent(textarea, "input", function (event) {
-            // console.log("input"+ textarea.value + textarea.value.length);
             if (textarea.value.length === 0)
                 _mix.oninput.call(this, event, "delete"); // delete
         });
 
         onevent(textarea, "contextmenu", function (event) {
-            // _mix.beforeContextmenuPopup(event, _mix.inputController && !_mix.inputController.range.collapsed);
             _mix.oninput.call(this, event, "contextmenu");
         });
 
@@ -102,6 +100,7 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
         oninput: noop, // default dummy oninput callback function
         hide: function () { this.node.style.display = "none"; },
         show: function () { this.node.style.display = "block"; },
+        focus: function () { this.node.children[0].focus(); },
         setBaseOffset: function (x, y) {
             this.baseX = x;
             this.baseY = y;
@@ -115,9 +114,9 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
                 this.y = this.baseY + y;
                 this.node.style.top = this.y + "px";
             }
-            emit("cursor-position", this.x, this.y);
             this.show();
-            if (document.activeElement != this) this.focus();
+            this.focus();
+            if (arguments[2] !== false) emit("cursor-position", this.x, this.y);
         },
         flash: function (command) {
             var style = this.node.style;
@@ -126,9 +125,6 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
                 else if (command === "stop") style.borderLeftWidth = "0px";
             }
             style.borderLeftColor = style.borderLeftColor.length < 6 ? "transparent" : "black";
-        },
-        focus: function () {
-            this.node.children[0].focus();
         },
         beforeContextmenuPopup: function (x, y, selected) {
         var textarea = this.node.children[0],
@@ -152,7 +148,7 @@ var Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () 
                 style.left = posX;
                 style.top = posY;
                 style.width = "0px";
-                textarea.value = "\t"; // hack, prevent select all after cancel contextmenu
+                textarea.value = " "; // hack, prevent select all after cancel contextmenu
                 textarea.select();
                 that.flash("start");
             };

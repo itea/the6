@@ -30,7 +30,7 @@ html, body {padding: 0; margin: 0}
 .code-box .menubar a:hover {color: white; background-color: gray;}
 
 .codes:empty {display:block;}
-.codes {list-style: none outside; position:relative;padding:0 0 0 0; margin:0 31px 0 36px; display: inline-block;}
+.codes {list-style: none outside; position:relative;padding:0 0 0 0; margin:0 1px 0 36px; display: inline-block;}
 .codes {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
 .codes ::selection {background-color: transparent;}
 .codes ::-moz-selection {background-color: transparent;}
@@ -42,6 +42,11 @@ html, body {padding: 0; margin: 0}
 .codes pre:empty:after {content:" ";}
 .codes pre {margin: 0; padding: 0; border: none; z-index: 9; position:relative;}
 /*.codes pre {white-space: pre-wrap;}*/
+
+@-moz-document url-prefix() {
+    /* firefox will overlap outer element padding and inner element margin, so hack */
+    .codes {margin:0 31px 31px 36px;}
+}
 #bb {padding:20px;}
 	</style>
     <script language="javascript" src="markless.js"></script>
@@ -59,8 +64,8 @@ var fn = function () {
     var inpagecodes = document.getElementById("inpagecodes").textContent;
     var inpagestyle = document.querySelector("style").textContent;
 
-    var coderBox = createCoderBox(inpagestyle);
-    document.getElementById("bb").appendChild( coderBox.boxElement );
+    var coderBox = createCodeBox(inpagestyle);
+    document.getElementById("bb").appendChild( coderBox.node );
 };
 window.onload = function() {
     fn();

@@ -2,8 +2,6 @@ var setSelectionRect = function (node, t, l, h, w, show) {
     var style = node.style;
         if (t === "hide")
             style.display = "none";
-        // else if (t === "show")
-        //     style.display = "block";
         else {
             style.top = t + "px";
             style.left = l + "px";
@@ -24,16 +22,6 @@ var setSelectionRect = function (node, t, l, h, w, show) {
     var node = this;
 
         this._mix.selectionMaskers = [ this.children[0], this.children[1], this.children[2] ];
-
-        /*
-        onevent("horizontal-scroll", function (event, offset) {
-            node.style.left = -offset + "px";
-        });
-
-        onevent("vertical-scroll", function (event, offset) {
-            node.style.top = -offset + "px";
-        });
-        */
 
         onevent("textarea-resize", function (width, height, x) {
             if (x & 1) node.style.width = width + "px";

@@ -32,7 +32,7 @@ var mix = markless.mix,
 
             for (i = 0, len = fns.length; i < len; i++) {
                 result = fns[i].apply(this, result);
-                if ( !result ) break;
+                if ( !result ) break; // if fns[i] return false value, stop the prosess
             }
 
             return result;
@@ -50,14 +50,41 @@ var mix = markless.mix,
         return node.innerText || node.textContent;
     },
 
+    log = (function () {
+    var on = false,
+        log = function () {
+            if ( !on ) return;
+            console.log.apply(console, Array.prototype.slice.call(arguments));
+        };
+
+        log.on = function () { on = true; };
+        log.off = function () { on = false; };
+
+        return log;
+    }()),
+
     // pub/sub
     emit = (function () {
-    var emit = function (eventType) {
-        var handlers = handlersIndex[ eventType ],
-            args = Array.prototype.slice.call(arguments, 1);
+    var fireNow = function (fn) { fn(); },
 
+        print = function (type, args) {
+            log([type].concat(args));
+        },
+
+        emit = function (eventType) {
+        var args = Array.prototype.slice.call(arguments, 1);
+            fire(eventType, args, defer);
+        },
+
+        handlersIndex = {},
+
+        fire = function (eventType, args, fireFn) {
+        var handlers = handlersIndex[ eventType ];
+
+            print(eventType, args);
             if ( !handlers || handlers.length === 0) return;
-            defer(function () {
+
+            fireFn(function () {
             var i = 0, target = null;
 
                 if (args[0] && args[0] instanceof window.Event) target = args[0].target;
@@ -65,22 +92,11 @@ var mix = markless.mix,
                     (handlers[i] || noop).apply(target, args);
                 }
             });
-        },
+        };
 
-        handlersIndex = {};
-
-        // fire immediatly
         emit.fire = function (eventType) {
-        var handlers = handlersIndex[ eventType ],
-            args = Array.prototype.slice.call(arguments, 1),
-            i = 0, target = null;
-
-            if ( !handlers || handlers.length === 0) return;
-
-            if (args[0] && args[0] instanceof window.Event) target = args[0].target;
-            for (; i < handlers.length; i++) {
-                (handlers[i] || noop).apply(target, args);
-            }
+        var args = Array.prototype.slice.call(arguments, 1);
+            fire(eventType, args, fireNow);
         };
 
         emit.addEventListener = function (eventType, callback, prepend) {
@@ -94,14 +110,17 @@ var mix = markless.mix,
 
     onevent = function (node, eventTypes, callback, capture) {
         "use strict";
+    var i;
 
-        if (typeof node === "string") {
+        if (typeof node === "string" || node instanceof Array) {
             capture = arguments[2];
             callback = arguments[1];
             eventTypes = arguments[0];
             node = emit;
         }
-        node.addEventListener(eventTypes, callback, capture);
+        if (typeof eventTypes === "string") eventTypes = [eventTypes];
+        for (i = 0; i < eventTypes.length; i++)
+            node.addEventListener(eventTypes[i], callback, capture);
     },
 
     offevent = function (node, eventTypes, callback) {

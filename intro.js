@@ -1,2 +1,3 @@
-window.createCoderBox = (function () {
+window.createCodeBox = (function () {
     "use strict";
+

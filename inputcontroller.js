@@ -1,6 +1,5 @@
+/*  InputController use to controll user input events */
 var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
-
-    this.range = document.createRange();
 
     var lastLineID = -1,
 
@@ -14,6 +13,9 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             cursor.setPosition(pos.posX, codeline.node.offsetTop + pos.posY);
         };
 
+        // range, save the range of user selected text
+        this.range = document.createRange();
+
     var mousedownInfo = {x:-1, y:-1},
         controller = this,
         codesElement = lineBox.node,
@@ -25,7 +27,6 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
 
         var lipre = locateLineContentElement(event.target, codesElement);
             if (lipre == null) { // curosr out of the lineBox
-                console.log(event.clientX);
                 return;
             }
 
@@ -97,7 +98,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
 
         // mouse locate
         onevent( codesElement, "mouseup", function (event) {
-            if (event.button !== 0) return; // Left button only
+            // if (event.button !== 0) return; // Left button only
         var lipre = locateLineContentElement(event.target, codesElement);
             if (lipre == null) return;
 
@@ -121,17 +122,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         cursor.oninput = buildsteps(
         function (event, type) {
             // check textarea size
-        var oldWidth = lineBox.node.clientWidth,
-            oldHeight = lineBox.node.clientHeight;
-
-            defer(function () {
-            var width = lineBox.node.clientWidth,
-                height = lineBox.node.clientHeight,
-                // x == 1, width changed; x == 2, height changed; x == 3, both changed
-                x = (oldWidth === width ? 0 : 1) | (oldHeight === height ? 0: 2);
-
-                if (x) emit.fire("textarea-resize", width, height, x);
-            });
+            lineBox.checkDimensionSize();
             return [event, type];
         },
         function (event, type) {
@@ -141,6 +132,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             switch ( type || event.keyCode ) {
             case 8:  // Backspace
             case 46: // Delete
+            case 13: // Enter
             case "delete":
                 lineBox.deletes( controller.range );
                 break;

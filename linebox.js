@@ -15,40 +15,50 @@ var locateLine = function (node, topNode) {
         return null;
     },
 
-    LineBox = mix("ol.codes", function (parentNode, cursor, codeMeasure, codeHighlight) {
+    LineBox = mix("ol.codes", function () {
     var _mix = this._mix,
-        thisNode = this;
+        node = this;
 
         _mix.nuCssRule = (function () {
             document.styleSheets[0].insertRule(".codes div.nu {}", document.styleSheets[0].cssRules.length);
             return document.styleSheets[0].cssRules[ document.styleSheets[0].cssRules.length -1 ];
         }());
 
-        _mix.inputController = new InputController(_mix, cursor, codeMeasure, codeHighlight);
-        // cursor.inputController = this._mix.inputController;
-
-        onevent("horizontal-scroll", function (event, offset) {
-            // thisNode.style.left = -offset + "px";
-            _mix.nuCssRule.style.left = offset -thisNode.offsetLeft + "px";
+        onevent("horizontal-scroll", function (offset) {
+            _mix.nuCssRule.style.left = offset -node.offsetLeft + "px";
         });
 
-        onevent("vertical-scroll", function (event, offset) {
-            // thisNode.style.top = -offset + "px";
-        });
+        // onevent("vertical-scroll", function (offset) { });
 
-        onevent("view-resize", function (width, height) {
-            thisNode.style.minWidth = width + "px";
+        onevent("view-resize", function (viewDimension) {
+            node.style.minWidth = viewDimension.width + "px";
         });
     }, {
+        checkDimensionSize: function () {
+        var node = this.node,
+            oldWidth = node.clientWidth,
+            oldHeight = node.clientHeight;
+
+            defer(function () {
+            var width = node.clientWidth,
+                height = node.clientHeight,
+                // x == 1, width changed; x == 2, height changed; x == 3, both changed
+                x = (oldWidth === width ? 0 : 1) | (oldHeight === height ? 0: 2);
+
+                if (x) emit.fire("textarea-resize", width, height, x);
+            });
+        },
+
         setCode: function (src) {
         var start = 0, lastIdx, linenumber = 1,
-            eOl = this.node;
-        
+            node = this.node;
+
             while (true) {
+                // TODO use reguler expression /\r\n?|\n/g to find index of lineTeminator
                 lastIdx = src.indexOf("\n", start);
                 if (lastIdx == -1) lastIdx = src.length;
                 
-                eOl.appendChild(
+                node.appendChild(
                     new CodeLine( src.substring(start, lastIdx), start, linenumber )
                     );
         
@@ -58,6 +68,8 @@ var locateLine = function (node, topNode) {
             }
             this.activeLine = this.node.querySelector("li")._mix;
             this.columnIndex = 0;
+
+            this.checkDimensionSize();
         },
 
         getSelectedContent: function (range) {
