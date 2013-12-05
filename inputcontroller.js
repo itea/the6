@@ -94,7 +94,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             }
             codeHighlight.select( range, codesElement );
 
-            bye(event, true, true);
+            bye(event, true);
         };
 
         codesElement.addEventListener("mousedown", function (event) {
@@ -138,7 +138,8 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             controller.range = document.createRange();
             controller.range.setStart( mousedownInfo.rangeStartNode, pos.charIndex );
 
-            bye(event, true);
+            cursor.reset();
+            bye(event, true); // prevent cursor blur
         });
 
         onevent( document, "mouseup", function (event) {
@@ -156,7 +157,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             }
         });
 
-        // mouse locate
+        // cusror locate
         onevent( codesElement, "mouseup", function (event) {
             // if (event.button !== 0) return; // Left button only
         var lipre = locateLineContentElement(event.target, codesElement);
@@ -182,6 +183,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
 
         cursor.oninput = buildsteps(
         function (event, type) {
+            type && log(type);
             // check textarea size
             lineBox.checkDimensionSize();
             return [event, type];

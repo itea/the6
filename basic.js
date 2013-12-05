@@ -52,7 +52,7 @@ var mix = markless.mix,
     },
 
     log = (function () {
-    var on = false,
+    var on = true,
         log = function () {
             if (on) console.log.apply(console, Array.prototype.slice.call(arguments));
         };
@@ -146,6 +146,7 @@ var mix = markless.mix,
 
         eventManagerIndex = {},
 
+        /*
         addEventListener = function (node, eventType, fn, capture) {
         var uid = node._the6uid, mgr;
 
@@ -163,6 +164,15 @@ var mix = markless.mix,
             mgr = eventManagerIndex[eventType + "_" + uid];
             if (!mgr) return;
             mgr.removeListener(fn);
+        },
+        */
+
+        // disable event manager mechanism now
+        addEventListener = function (node, eventType, fn, capture) {
+            node.addEventListener(eventType, fn, capture);
+        },
+        removeEventListener = function (node, eventType, fn) {
+            node.removeEventListener(eventType, fn);
         },
 
         onoffevent = function (fn, node, eventTypes, callback, capture) {

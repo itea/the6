@@ -7,15 +7,47 @@ var Cursor = (function () {
  * onpropertychange     YES     YES
  * Both the input and onpropertychange events are buggy in Internet Explorer 9, they are not fired when characters are deleted only when inserted.
 */
+var bindEvents = function (handlers, node) {
+var i = 0, eventType, fn;
+
+    log(handlers);
+    for (; i< handlers.length; i++) {
+        fn = handlers[i];
+        if (typeof fn === "string") eventType = fn;
+        else node.addEventListener(eventType, fn);
+    }
+},
+overrideHandler = function (handlers, type, f) {
+var i = 0, eventType, fn;
+    for (; i< handlers.length; i++) {
+        fn = handlers[i];
+        if (typeof fn === "string") eventType = fn;
+        if (eventType !== type) continue;
+        i++;
+        while (typeof handlers[i] === "function") handlers.splice(i, 1);
+        handlers.splice(i, 0, f);
+    }
+};
+
 var basicMethods = {
         oninput: noop, // default dummy oninput callback function
-        hide: function () { this.node.style.display = "none"; },
-        show: function () { this.node.style.display = "block"; },
-        focus: function () { this.node.children[0].focus(); },
+        hide: function () { this.node.style.display = "none"; return this; },
+        show: function () { this.node.style.display = "block"; return this; },
+        focus: function (needDefer) {
+        var that = this;
+            // if (document.activeElement == this.node.children[0]) return;
+            this.node.children[0].focus();
+            return this;
+        },
+
+        reset: function () {
+            this.node.children[0].value = "";
+        },
 
         setBaseOffset: function (x, y) {
             this.baseX = x;
             this.baseY = y;
+            return this;
         },
 
         setPosition: function (x, y) {
@@ -27,8 +59,7 @@ var basicMethods = {
                 this.y = this.baseY + y;
                 this.node.style.top = this.y + "px";
             }
-            this.show();
-            this.focus();
+            this.show().focus();
             if (arguments[2] !== false) emit("cursor-position", this.x, this.y);
         },
 
@@ -39,26 +70,14 @@ var basicMethods = {
                 else if (command === "stop") style.borderLeftWidth = "0px";
             }
             style.borderLeftColor = style.borderLeftColor.length < 6 ? "transparent" : "black";
+            return this;
         },
 
-        beforeContextmenuPopup: function (x, y, selected) {
+        beforeContextmenuPopup: function (x, y, selected, r) {
         var textarea = this.node.children[0],
             style = this.node.style,
             posX = style.left, posY = style.top;
-
-            this.flash("stop");
-            this.show();
-            textarea.value = " ";
-            textarea.focus();
-            if (selected) {
-                textarea.selectionStart = 0;
-                textarea.selectionEnd = 1;
-            }
-            style.width = "80px";
-            style.left = this.baseX + x - 5 + "px";
-            style.top = this.baseY + y - 5 + "px";
-
-        var that = this,
+            that = this,
             cleaning = function () {
             var textarea = that.node.children[0],
                 style = that.node.style;
@@ -67,12 +86,25 @@ var basicMethods = {
                 style.top = posY;
                 style.width = "0px";
                 textarea.value = " ";
-                textarea.selectionStart = 0;
-                textarea.selectionEnd = 0;
+                textarea.setSelectionRange(0,1);
+                // textarea.selectionStart = 1;
+                // textarea.selectionEnd = 1;
                 that.flash("start");
             };
 
-            defer(cleaning);
+
+            this.flash("stop").show().focus();
+            textarea.value = " ";
+            if (selected) {
+                textarea.selectionStart = 0;
+                textarea.selectionEnd = 1;
+            }
+            style.width = "80px";
+            style.left = this.baseX + x - 15 + "px";
+            style.top = this.baseY + y - 5 + "px";
+
+            if (r) return cleaning;
+            else defer(cleaning);
         }
     },
 
@@ -81,50 +113,44 @@ var basicMethods = {
         textarea = this.children[0];
 
         _mix.baseX = _mix.baseY = 0;
+        textarea.value = "";
 
-        textarea.value = " ";
-
-        onevent(textarea, "textInput", function (event) {
-            _mix.oninput.call(this, event, "input");
-            textarea.value = "";
-        });
-
-        onevent(textarea, "input", function (event) {
-            if (textarea.value.length === 0)
-                _mix.oninput.call(this, event, "delete"); // delete
-        });
-
-        onevent(textarea, "blur", function (event) {
+    var handlers = [
+        "focus", function (event) {
+            // emit("cursor-focus");
+            event.target.value = "";
+        },
+        "blur", function (event) {
+            // emit("cursor-blur");
             _mix.hide();
-        });
-
-        onevent(textarea, "copy", function (event) {
+        },
+        "copy", function (event) {
             _mix.oninput.call( this, event, "copy" );
             event.preventDefault();
-        });
-
-        onevent(textarea, "cut", function (event) {
+        },
+        "cut", function (event) {
             _mix.oninput.call( this, event, "cut" );
             event.preventDefault();
-        });
-
-        onevent(textarea, "paste", function (event) {
+        },
+        "paste", function (event) {
             _mix.oninput.call( this, event, "paste" );
             event.preventDefault();
-        });
-
-        onevent(textarea, "select", function (event) {
+        },
+        "select", function (event) {
             _mix.oninput.call(this, event, "select"); // select all
             // clean input element, prevent infinit select event
-            event.target.selectionEnd = 0;
-            event.preventDefault();
-        });
-
-        onevent(textarea, "contextmenu", function (event) {
+            // event.target.selectionEnd = 1;
+            // event.preventDefault();
+        },
+        "contextmenu", function (event) {
             _mix.oninput.call(this, event, "contextmenu");
-        });
-
-        onevent(textarea, "keydown", function (event) {
+        },
+        "input", function (event) {
+            if (event.target.value.length === 0)
+                _mix.oninput.call(this, event, "delete"); // delete
+            // setting textarea.value = "" will cause input method doesnt work
+        },
+        "keydown", function (event) {
             switch (event.keyCode) {
             case 8:  // Backspace
             case 9:  // Tab
@@ -143,7 +169,55 @@ var basicMethods = {
                 event.preventDefault();
                 break;
             }
-        });
+        }];
+
+        if (browser === "CHROME") {
+            handlers.push(
+            "textInput", function (event) {
+                _mix.oninput.call(this, event, "input");
+            },
+            "keydown", function (event) {
+                if (event.keyCode === 65 && event.ctrlKey) {
+                    event.target.value = " ";
+                    defer(function () { event.target.value = ""; });
+                }
+            });
+        } else if (browser === "FF") {
+            overrideHandler(handlers, "input", function (event) {
+                event.data = event.target.value;
+                _mix.oninput.call(this, event, "input");
+                textarea.value = "";
+            });
+            handlers.push(
+            "keydown", function (event) {
+                switch (event.keyCode) {
+                case 65: // CTRL-A
+                    if (event.ctrlKey) {
+                        textarea.value = " ";
+                        // seems FF will not triger select event, so using .select() to triger it.
+                        textarea.select();
+                        defer(function () { event.target.value = ""; });
+                    }
+                    break;
+                case 67: // CTRL-C
+                case 88: // CTRL-X
+                    // fix that Firefox must have selection then could do copy/cut operation
+                    if (event.ctrlKey) {
+                        textarea.value = " ";
+                        textarea.selectionStart = 0;
+                        textarea.selectionEnd = 1;
+                        defer(function () { event.target.value = ""; });
+                    }
+                    break;
+                }
+            });
+            _mix.beforeContextmenuPopup = function (x, y, selected) {
+            var cleaning = basicMethods.beforeContextmenuPopup.call(this, x, y, selected, true);
+                defer(cleaning, 1000);
+            }
+        }
+
+        bindEvents(handlers, textarea);
 
         _mix.intervalHandler = window.setInterval(function () {
             _mix.flash();
@@ -222,8 +296,9 @@ var basicMethods = {
             case 65: // CTRL-A
                 if (event.ctrlKey) {
                     textarea.value = " ";
-                    textarea.select(); // seems FF will not triger select event, so using .select() to triger it.
-                    textarea.value = "";
+                    // seems FF will not triger select event, so using .select() to triger it.
+                    textarea.select();
+                    defer(function () { event.target.value = ""; });
                 }
                 break;
             case 67: // CTRL-C
@@ -233,6 +308,7 @@ var basicMethods = {
                     textarea.value = " ";
                     textarea.selectionStart = 0;
                     textarea.selectionEnd = 1;
+                    defer(function () { event.target.value = ""; });
                 }
                 break;
             }
@@ -245,44 +321,14 @@ var basicMethods = {
     basicMethods,
     {
         beforeContextmenuPopup: function (x, y, selected) {
-            // return; // Seems not able to show context menu for input options (cut/copy/paste/select-all)
-        var textarea = this.node.children[0],
-            style = this.node.style,
-            posX = style.left, posY = style.top;
-
-            this.flash("stop");
-            this.show();
-            textarea.focus();
-            if (selected) {
-                textarea.value = " ";
-                textarea.selectionStart = 0;
-                textarea.selectionEnd = 1;
-            } else textarea.value = "";
-            style.width = "80px";
-            style.left = this.baseX + x - 15 + "px";
-            style.top = this.baseY + y - 5 + "px";
-
-        var that = this,
-            cleaning = function () {
-            var textarea = that.node.children[0],
-                style = that.node.style;
-
-                style.left = posX;
-                style.top = posY;
-                style.width = "0px";
-                textarea.value = " "; // hack, prevent select all after cancel contextmenu
-                textarea.selectionStart = 0;
-                textarea.selectionEnd = 1;
-                that.flash("start");
-            };
-
-            defer(cleaning, 0);
+        var cleaning = basicMethos.beforeContextmenuPopup(x, y, selected, true);
+            defer(cleaning, 1000);
         }
     });
 
     return {
         "CHROME": ChromeCursor,
-        "FF": FirefoxCursor
+        "FF": ChromeCursor,
     }[browser];
 }());
 
