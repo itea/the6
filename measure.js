@@ -11,11 +11,18 @@ var mixresult = function () {
     },
 
     CodeMeasure = mix("div.code-measure >pre", function () {
-    var node = this;
+    var node = this,
+        _mix = this._mix;
 
-        onevent("textarea-resize", function (width, height, x) {
+        _mix.wrapLine = false;
+
+        onevent([
+        "textarea-resize", function (width, height, x) {
             // node.style.width = width + "px";
-        });
+        },
+        "option-wrapline", function (flag) {
+            _mix.wrapLine = flag = !!flag;
+        }]);
 
     },{
         lineContent: {length: -1},
@@ -37,7 +44,7 @@ var mixresult = function () {
 
         measure: function (line, offx, offy) {
             if (typeof line === "string") this.setLine(line);
-            else { offy = offx; offx = line; }
+            else offy = offx, offx = line;
 
         var node = this.node,
             ele = node.children[0].children[0],

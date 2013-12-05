@@ -11,7 +11,6 @@ var mix = markless.mix,
     })(),
 
     defer = function (cbk, t) {
-        /* use faster timeouts fn: http://dbaron.org/log/20100309-faster-timeouts */
         window.setTimeout(cbk, t || 0);
     },
 
@@ -118,7 +117,6 @@ var mix = markless.mix,
                     args = Array.prototype.slice.call(arguments, 0);
                     i = 0;
 
-                    if (fnque.length === 0) return;
                     for (; i < fnque.length; i++) {
                         (fnque[i] || noop).apply(node, args);
                     }
@@ -175,6 +173,50 @@ var mix = markless.mix,
             node.removeEventListener(eventType, fn);
         },
 
+        onoffloop = function (bind, args) {
+        var node, types, callbacks, capture, e;
+            getArg = function (expect) {
+                return (typeof args[0] === expect) ? args.shift() : undefined;
+            };
+
+            while(true) {
+                node = type = null;
+                capture = false;
+                callbacks = [];
+                e = node = getArg("object");
+                if (e == null) node = emit;
+
+                e = getArg("string");
+                if (e === undefined) break;
+                types = e;
+
+                while(true) {
+                    e = getArg("function");
+                    if (e === undefined) break;
+                    callbacks.push(e);
+                }
+
+                if (callbacks.length === 0) break;
+                e = getArg("boolean");
+                if (e !== undefined) capture = e;
+
+                onoff(bind, node, types, callbacks, capture);
+            }
+        },
+
+        regx_blank = /\s+/,
+        onoff = function (bind, node, eventTypes, callbacks, capture) {
+        var types = eventTypes.split(regx_blank),
+            i = 0;
+
+            for(; i< callbacks.length; i++) {
+                while (types.length > 0)
+                    bind(node, types.shift(), callbacks[i], capture);
+            }
+
+        },
+
+        /*
         onoffevent = function (fn, node, eventTypes, callback, capture) {
             "use strict";
         var i;
@@ -189,13 +231,19 @@ var mix = markless.mix,
             for (i = 0; i < eventTypes.length; i++)
                 fn(node, eventTypes[i], callback, capture);
         },
+        */
 
-        onevent = function (node, eventTypes, callback, capture) {
-            onoffevent(addEventListener, node, eventTypes, callback, capture);
+        toArgArray = function (args) {
+            return (args.length === 1 && args[0] instanceof Array) ? args[0]
+                : Array.prototype.slice.call(args, 0);
         },
 
-        offevent = function (node, eventTypes, callback) {
-            onoffevent(removeEventListener, node, eventTypes, callback);
+        onevent = function () {
+            onoffloop(addEventListener, toArgArray(arguments));
+        },
+
+        offevent = function () {
+            onoffloop(removeEventListener, toArgArray(arguments));
         };
 
         onevent.off = offevent;
@@ -203,6 +251,20 @@ var mix = markless.mix,
     }()),
 
     offevent = onevent.off,
+
+    /* use faster timeouts fn: http://dbaron.org/log/20100309-faster-timeouts */
+    defer = (function () {
+    var q = [];
+        onevent(window, "message", function (event) {
+            if ("*defer*" !== event.data) return;
+            while( q.length > 0 ) q.shift()();
+        }, true);
+
+        return function (cbk, t) {
+            t ?  window.setTimeout(cbk, t) :
+                (q.push(cbk), window.postMessage("*defer*", "*") );
+        };
+    }()),
 
     bye = function (event, a, b) {
         if (a) event.preventDefault();

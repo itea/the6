@@ -1,25 +1,25 @@
 var NumberBar = mix("div.nubar", function () {
     var node = this; 
-        onevent("horizontal-scroll", function (offset) {
+        onevent([
+        "horizontal-scroll", function (offset) {
             node.style.left = offset + "px";
-        });
-
-        onevent("textarea-resize", function (width, height, x) {
+        },
+        "textarea-resize", function (width, height, x) {
             if (x & 2) node.style.height = height + 30 + "px";
-        });
+        }]);
     }),
 
     HScrollBar = mix("div.scroll.horizontal > div", function () {
     var _mix = this._mix;
 
-        onevent(this, "scroll", function (event) {
+        onevent([
+        this, "scroll", function (event) {
             _mix.onscroll(event);
             emit.fire("horizontal-scroll", this.scrollLeft);
-        });
-
-        onevent("textarea-resize", function (width, height, x) {
+        },
+        "textarea-resize", function (width, height, x) {
             if (x & 1) _mix.setScrollLength(width);
-        });
+        }]);
     }, {
         onscroll: noop,
         display: function (s) {
@@ -38,14 +38,14 @@ var NumberBar = mix("div.nubar", function () {
     VScrollBar = mix("div.scroll.vertical > div", function () {
     var _mix = this._mix;
 
-        onevent(this, "scroll", function (event) {
+        onevent([
+        this, "scroll", function (event) {
             _mix.onscroll(event);
             emit.fire("vertical-scroll", this.scrollTop);
-        });
-
-        onevent("textarea-resize", function (width, height, x) {
+        },
+        "textarea-resize", function (width, height, x) {
             if (x & 2) _mix.setScrollLength(height);
-        });
+        }]);
     }, {
         onscroll: noop,
         display: function (s) {
@@ -87,13 +87,10 @@ var NumberBar = mix("div.nubar", function () {
         this.appendChild(_mix.hscrollbar.node);
         this.appendChild(_mix.vscrollbar.node);
 
-        onevent("horizontal-scroll", function (offset) {
-            boxNode.scrollLeft = offset;
-        });
-
-        onevent("vertical-scroll", function (offset) {
-            boxNode.scrollTop = offset;
-        });
+        onevent([
+        "horizontal-scroll", function (offset) { boxNode.scrollLeft = offset; },
+        "vertical-scroll", function (offset) { boxNode.scrollTop = offset; }
+        ]);
 
         /*  each time the cursor was psotioned, check if need to scroll context
             to make the cursor show in view area */
@@ -122,7 +119,7 @@ var NumberBar = mix("div.nubar", function () {
             scrollIntoView( _mix.cursor.x, _mix.cursor.y );
         });
 
-        onevent(boxNode, ["mousewheel", "DOMMouseScroll"], function (event) {
+        onevent(boxNode, "mousewheel DOMMouseScroll", function (event) {
             defer(function () {
                 _mix.hscrollbar.scrollTo(boxNode.scrollLeft);
                 _mix.vscrollbar.scrollTo(boxNode.scrollTop);
@@ -134,7 +131,8 @@ var NumberBar = mix("div.nubar", function () {
             _mix.node.scrollTop = _mix.node.scrollLeft = 0;
         });
 
-        onevent(["box-resize", "textarea-resize"], function () {
+        // onevent(["box-resize", "textarea-resize"], function () {
+        onevent("box-resize textarea-resize", function () {
         var textWidth = _mix.lineBox.node.offsetWidth,
             textHeight = _mix.lineBox.node.offsetHeight,
             boxWidth = _mix.node.clientWidth,
@@ -181,6 +179,9 @@ var NumberBar = mix("div.nubar", function () {
             emit("box-resize", _mix.node.clientWidth, _mix.node.clientHeight);
         });
     }, {
+        set: function (opt, value) {
+            emit.fire("option-" + opt, value);
+        },
         setCode: function (src) {
             this.lineBox.setCode(src);
         }

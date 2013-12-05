@@ -82,6 +82,18 @@ var lineIDseq = 100,
                 text = origin.substring(start);
             }
             return text;
+        },
+
+        setRange: function (range, offset, start) {
+        var node = this.ePre.firstChild || this.ePre,
+            offset = offset > this.contentLength() ? this.contentLength() : offset;
+
+            if (offset < 0) offset = this.contentLength() + offset +1;
+
+            if (start) {
+                range.setStart(node, offset);
+            } else
+                range.setEnd(node, offset);
         }
     });
 

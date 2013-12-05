@@ -10,7 +10,6 @@ var Cursor = (function () {
 var bindEvents = function (handlers, node) {
 var i = 0, eventType, fn;
 
-    log(handlers);
     for (; i< handlers.length; i++) {
         fn = handlers[i];
         if (typeof fn === "string") eventType = fn;
@@ -31,8 +30,8 @@ var i = 0, eventType, fn;
 
 var basicMethods = {
         oninput: noop, // default dummy oninput callback function
-        hide: function () { this.node.style.display = "none"; return this; },
-        show: function () { this.node.style.display = "block"; return this; },
+        hide: function () { this.flash("stop"); return this; },
+        show: function () { this.flash("start"); return this; },
         focus: function (needDefer) {
         var that = this;
             // if (document.activeElement == this.node.children[0]) return;
@@ -118,7 +117,6 @@ var basicMethods = {
     var handlers = [
         "focus", function (event) {
             // emit("cursor-focus");
-            event.target.value = "";
         },
         "blur", function (event) {
             // emit("cursor-blur");
@@ -137,7 +135,7 @@ var basicMethods = {
             event.preventDefault();
         },
         "select", function (event) {
-            _mix.oninput.call(this, event, "select"); // select all
+            _mix.oninput.call(this, event, "selectall"); // select all
             // clean input element, prevent infinit select event
             // event.target.selectionEnd = 1;
             // event.preventDefault();
@@ -211,10 +209,12 @@ var basicMethods = {
                     break;
                 }
             });
+            /*
             _mix.beforeContextmenuPopup = function (x, y, selected) {
             var cleaning = basicMethods.beforeContextmenuPopup.call(this, x, y, selected, true);
                 defer(cleaning, 1000);
             }
+            */
         }
 
         bindEvents(handlers, textarea);
