@@ -17,11 +17,15 @@ var mixresult = function () {
         _mix.wrapLine = false;
 
         onevent([
-        "textarea-resize", function (width, height, x) {
-            // node.style.width = width + "px";
+        "view-resize", function (view, x) {
+            if (x&1) _mix.viewWidth = view.width;
+            if (_mix.warpLine)
+                node.style.width = width + "px";
         },
-        "option-wrapline", function (flag) {
-            _mix.wrapLine = flag = !!flag;
+        "option-wrapLine", function (flag) {
+            // buggy
+            node.style.width = (_mix.wrapLine = flag = !!flag) ? _mix.viewWidth + "px" : "auto";
+            node.firstElementChild.style.whiteSpace = flag ? "pre-wrap" : "pre";
         }]);
 
     },{

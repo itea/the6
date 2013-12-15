@@ -107,7 +107,7 @@ var basicMethods = {
         }
     },
 
-    ChromeCursor = mix("div.code-cursor > input:text auotcomplete='off'", function () {
+    Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () {
     var _mix = this._mix,
         textarea = this.children[0];
 
@@ -143,11 +143,6 @@ var basicMethods = {
         "contextmenu", function (event) {
             _mix.oninput.call(this, event, "contextmenu");
         },
-        "input", function (event) {
-            if (event.target.value.length === 0)
-                _mix.oninput.call(this, event, "delete"); // delete
-            // setting textarea.value = "" will cause input method doesnt work
-        },
         "keydown", function (event) {
             switch (event.keyCode) {
             case 8:  // Backspace
@@ -169,130 +164,30 @@ var basicMethods = {
             }
         }];
 
-        if (browser === "CHROME") {
-            handlers.push(
-            "textInput", function (event) {
-                _mix.oninput.call(this, event, "input");
-            },
-            "keydown", function (event) {
-                if (event.keyCode === 65 && event.ctrlKey) {
-                    event.target.value = " ";
-                    defer(function () { event.target.value = ""; });
-                }
-            });
-        } else if (browser === "FF") {
-            overrideHandler(handlers, "input", function (event) {
-                event.data = event.target.value;
-                _mix.oninput.call(this, event, "input");
-                textarea.value = "";
-            });
-            handlers.push(
-            "keydown", function (event) {
-                switch (event.keyCode) {
-                case 65: // CTRL-A
-                    if (event.ctrlKey) {
-                        textarea.value = " ";
-                        // seems FF will not triger select event, so using .select() to triger it.
-                        textarea.select();
-                        defer(function () { event.target.value = ""; });
-                    }
-                    break;
-                case 67: // CTRL-C
-                case 88: // CTRL-X
-                    // fix that Firefox must have selection then could do copy/cut operation
-                    if (event.ctrlKey) {
-                        textarea.value = " ";
-                        textarea.selectionStart = 0;
-                        textarea.selectionEnd = 1;
-                        defer(function () { event.target.value = ""; });
-                    }
-                    break;
-                }
-            });
-            /*
-            _mix.beforeContextmenuPopup = function (x, y, selected) {
-            var cleaning = basicMethods.beforeContextmenuPopup.call(this, x, y, selected, true);
-                defer(cleaning, 1000);
+    var chromeHandlers = [
+        "textInput", function (event) {
+            _mix.oninput.call(this, event, "input");
+        },
+        "input", function (event) {
+            if (event.target.value.length === 0)
+                _mix.oninput.call(this, event, "delete"); // delete
+            // setting textarea.value = "" will cause input method doesnt work
+        },
+        "keydown", function (event) {
+            if (event.keyCode === 65 && event.ctrlKey) {
+                event.target.value = " ";
+                defer(function () { event.target.value = ""; });
             }
-            */
-        }
+        }];
 
-        bindEvents(handlers, textarea);
-
-        _mix.intervalHandler = window.setInterval(function () {
-            _mix.flash();
-        }, 500);
-    }, basicMethods),
-
-    FirefoxCursor = mix("div.code-cursor > input:text auotcomplete='off'", function () {
-    var _mix = this._mix,
-        textarea = this.children[0];
-
-        _mix.baseX = _mix.baseY = 0;
-
-        textarea.value = "";
-
-        // A bug in FF that press ESC will trigger input event with last content, not know how to fix it, just leave it.
-        onevent(textarea, "input", function (event) {
+    var firefoxHandlers = [
+        "input", function (event) {
             event.data = event.target.value;
             _mix.oninput.call(this, event, "input");
             textarea.value = "";
-        });
-
-        onevent(textarea, "blur", function (event) {
-            _mix.hide();
-        });
-
-        onevent(textarea, "copy", function (event) {
-            _mix.oninput.call( this, event, "copy" );
-            event.preventDefault();
-        });
-
-        onevent(textarea, "cut", function (event) {
-            _mix.oninput.call( this, event, "cut" );
-            event.preventDefault();
-        });
-
-        onevent(textarea, "paste", function (event) {
-            _mix.oninput.call( this, event, "paste" );
-            event.preventDefault();
-        });
-
-        onevent(textarea, "select", function (event) {
-            _mix.oninput.call(this, event, "select"); // select all
-            // clean input element, prevent infinit select event
-            event.target.selectionEnd = 0;
-            event.target.value = "";
-            event.preventDefault();
-        });
-
-        onevent(textarea, "input", function (event) {
-            if (textarea.value.length === 0)
-                _mix.oninput.call(this, event, "delete"); // delete
-        });
-
-        onevent(textarea, "contextmenu", function (event) {
-            // _mix.oninput.call(this, event, "contextmenu");
-        });
-
-        onevent(textarea, "keydown", function (event) {
+        },
+        "keydown", function (event) {
             switch (event.keyCode) {
-            case 8:  // Backspace
-            case 9:  // Tab
-            case 13: // Enter
-            case 27: // Esc
-            case 46: // Delete
-            case 33: // PageUp
-            case 34: // PageDown
-            case 35: // End
-            case 36: // Home
-            case 37: // ArrowLeft
-            case 38: // ArrowUp
-            case 39: // ArrowRight
-            case 40: // ArrowDown
-                _mix.oninput.call(this, event);
-                event.preventDefault();
-                break;
             case 65: // CTRL-A
                 if (event.ctrlKey) {
                     textarea.value = " ";
@@ -312,23 +207,25 @@ var basicMethods = {
                 }
                 break;
             }
-        });
+        }];
+
+    var operaHandlers = [
+        "input", function (event) {
+            event.data = event.target.value;
+            _mix.oninput.call(this, event, "input");
+            textarea.value = "";
+        }];
+
+        bindEvents(handlers.concat(
+            {"FF": firefoxHandlers,
+             "CHROME": chromeHandlers,
+             "OPERA": operaHandlers}[browser]), textarea);
 
         _mix.intervalHandler = window.setInterval(function () {
             _mix.flash();
         }, 500);
-    },
-    basicMethods,
-    {
-        beforeContextmenuPopup: function (x, y, selected) {
-        var cleaning = basicMethos.beforeContextmenuPopup(x, y, selected, true);
-            defer(cleaning, 1000);
-        }
-    });
+    }, basicMethods);
 
-    return {
-        "CHROME": ChromeCursor,
-        "FF": ChromeCursor,
-    }[browser];
+    return Cursor;
 }());
 

@@ -1,5 +1,12 @@
 var lineIDseq = 100,
 
+    setHTML = function (node, html) {
+        node.innerHTML = html;
+    },
+    getHTML = function (node) {
+        return node.innerHTML;
+    },
+
     CodeLine = mix("li\n div.nu\n pre", function (content) {
         this._mix.lineID = lineIDseq++;
         if (this.dataset) this.dataset.lineId = this._mix.lineID;

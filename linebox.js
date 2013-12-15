@@ -20,12 +20,21 @@ var locateLine = function (node, topNode) {
         node = this;
 
         _mix.nuCssRule = (function () {
-            document.styleSheets[0].insertRule(".codes div.nu {}", document.styleSheets[0].cssRules.length);
+            document.styleSheets[0].insertRule("ol.codes div.nu {}", document.styleSheets[0].cssRules.length);
+            return document.styleSheets[0].cssRules[ document.styleSheets[0].cssRules.length -1 ];
+        }());
+
+        _mix.preCssRule = (function () {
+            document.styleSheets[0].insertRule("ol.codes pre {}", document.styleSheets[0].cssRules.length);
             return document.styleSheets[0].cssRules[ document.styleSheets[0].cssRules.length -1 ];
         }());
 
         onevent("horizontal-scroll", function (offset) {
             _mix.nuCssRule.style.left = offset -node.offsetLeft + "px";
+        },
+        "option-wrapLine", function (flag) {
+            _mix.checkDimensionSize();
+            _mix.preCssRule.style.cssText = !!flag ? "white-space: pre-wrap;" : "white-space: pre";
         });
 
         // onevent("vertical-scroll", function (offset) { });
@@ -144,45 +153,31 @@ var locateLine = function (node, topNode) {
             }
         },
 
-        insert: function (position, content) {
+        insert: function (content) {
         var lineBox = this,
             match, tailContent, range,
             activeLine = this.activeLine,
+            modified = [],
             regx = /(?:\r\n)|[\r\n]|(.+)/g;
 
-            if (position instanceof Range) {
-                range = position;
-                position = "range";
-            }
-
-            switch (position) {
-            case "range":
-                this.deletes(range);
-
-                // continue to insert content by reusing case "char"
-                activeLine = this.activeLine;
-
-            case "char":
-                tailContent = activeLine.deletes( this.columnIndex );
-                while ( match = regx.exec( content ) ) {
-                    if (match[1]) {
-                        activeLine.append( match[1] );
-                    } else {
-                        activeLine = new CodeLine()._mix;
-                        this.activeLine.node.parentNode.insertBefore(
-                            activeLine.node,
-                            this.activeLine.node.nextElementSibling);
-                        this.activeLine = activeLine;
-                    }
+            tailContent = activeLine.deletes( this.columnIndex );
+            modified.push(activeLine);
+            while ( match = regx.exec( content ) ) {
+                if (match[1]) {
+                    activeLine.append( match[1] );
+                } else {
+                    activeLine = new CodeLine()._mix;
+                    this.activeLine.node.parentNode.insertBefore(
+                        activeLine.node,
+                        this.activeLine.node.nextElementSibling);
+                    this.activeLine = activeLine;
+                    modified.push(activeLine);
                 }
-
-                this.columnIndex = activeLine.contentLength();
-                if (tailContent) activeLine.append( tailContent );
-                break;
-
-            case "line":
-                break;
             }
+
+            this.columnIndex = activeLine.contentLength();
+            if (tailContent) activeLine.append( tailContent );
+            return modified;
         },
 
         deletes: function (position) {

@@ -1,6 +1,8 @@
 var mix = markless.mix,
 
     noop = Function.prototype, // function () {},
+
+    slicefn = Array.prototype.slice,
     
     browser = (function () {
         var userAgent = window.navigator.userAgent;
@@ -10,25 +12,21 @@ var mix = markless.mix,
         return "UNKNOWN";
     })(),
 
-    defer = function (cbk, t) {
-        window.setTimeout(cbk, t || 0);
+    defer, // initialize later
+
+    /*  Make arguments to an array or use the only array parameter */
+    getArgsArray = function (args, i) {
+        i = i || 0;
+        return (args.length === 1 && args[0] instanceof Array) ? args[0].slice(i)
+            : slicefn.call(args, i);
     },
 
-    buildsteps = function () {
-    var len = arguments.length, i = 0,
-        fns = [];
-
-        for (; i < len; i++) {
-            fns.push( arguments[i] );
-        }
+    combine = function () {
+    var fns = getArgsArray(arguments);
 
         return function () {
-        var len = arguments.length, i = 0,
-            result = [];
-
-            for (; i < len; i++) {
-                result.push (arguments[i]);
-            }
+        var result = getArgsArray(arguments),
+            i = 0, len;
 
             for (i = 0, len = fns.length; i < len; i++) {
                 result = fns[i].apply(this, result);
@@ -53,7 +51,7 @@ var mix = markless.mix,
     log = (function () {
     var on = true,
         log = function () {
-            if (on) console.log.apply(console, Array.prototype.slice.call(arguments));
+            if (on) console.log.apply(console, slicefn.call(arguments));
         };
 
         log.on = function () { on = true; };
@@ -71,7 +69,7 @@ var mix = markless.mix,
         },
 
         emit = function (eventType) {
-        var args = Array.prototype.slice.call(arguments, 1);
+        var args = slicefn.call(arguments, 1);
             fire(eventType, args, defer);
         },
 
@@ -93,7 +91,7 @@ var mix = markless.mix,
         };
 
         emit.fire = function (eventType) {
-        var args = Array.prototype.slice.call(arguments, 1);
+        var args = slicefn.call(arguments, 1);
             fire(eventType, args, fireNow);
         };
 
@@ -114,7 +112,7 @@ var mix = markless.mix,
             return {
                 resolve: function (event) {
                 var fnque = (event || {eventPhase: 0}).eventPhase === 1 ? fnq_capture : fnq,
-                    args = Array.prototype.slice.call(arguments, 0);
+                    args = slicefn.call(arguments);
                     i = 0;
 
                     for (; i < fnque.length; i++) {
@@ -233,17 +231,12 @@ var mix = markless.mix,
         },
         */
 
-        toArgArray = function (args) {
-            return (args.length === 1 && args[0] instanceof Array) ? args[0]
-                : Array.prototype.slice.call(args, 0);
-        },
-
         onevent = function () {
-            onoffloop(addEventListener, toArgArray(arguments));
+            onoffloop(addEventListener, getArgsArray(arguments));
         },
 
         offevent = function () {
-            onoffloop(removeEventListener, toArgArray(arguments));
+            onoffloop(removeEventListener, getArgsArray(arguments));
         };
 
         onevent.off = offevent;
@@ -270,4 +263,10 @@ var mix = markless.mix,
         if (a) event.preventDefault();
         if (b) event.stopPropagation();
     };
+
+    Array.prototype.applyOn = function (fn, o) {
+        return fn.apply(o, this);
+    };
+
+    Object.defineProperty(Array.prototype, 'applyOn', {'enumerable': false});
 

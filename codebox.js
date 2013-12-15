@@ -1,25 +1,25 @@
 var NumberBar = mix("div.nubar", function () {
     var node = this; 
-        onevent([
+        onevent(
         "horizontal-scroll", function (offset) {
             node.style.left = offset + "px";
         },
         "textarea-resize", function (width, height, x) {
             if (x & 2) node.style.height = height + 30 + "px";
-        }]);
+        });
     }),
 
     HScrollBar = mix("div.scroll.horizontal > div", function () {
     var _mix = this._mix;
 
-        onevent([
+        onevent(
         this, "scroll", function (event) {
             _mix.onscroll(event);
             emit.fire("horizontal-scroll", this.scrollLeft);
         },
         "textarea-resize", function (width, height, x) {
             if (x & 1) _mix.setScrollLength(width);
-        }]);
+        });
     }, {
         onscroll: noop,
         display: function (s) {
@@ -38,14 +38,14 @@ var NumberBar = mix("div.nubar", function () {
     VScrollBar = mix("div.scroll.vertical > div", function () {
     var _mix = this._mix;
 
-        onevent([
+        onevent(
         this, "scroll", function (event) {
             _mix.onscroll(event);
             emit.fire("vertical-scroll", this.scrollTop);
         },
         "textarea-resize", function (width, height, x) {
             if (x & 2) _mix.setScrollLength(height);
-        }]);
+        });
     }, {
         onscroll: noop,
         display: function (s) {
@@ -139,7 +139,7 @@ var NumberBar = mix("div.nubar", function () {
             boxHeight = _mix.node.clientHeight,
             viewWidth = boxWidth - _mix.lineBox.node.offsetLeft - _mix.vscrollbar.node.offsetWidth,
             viewHeight = boxHeight - _mix.lineBox.node.offsetTop - _mix.hscrollbar.node.offsetHeight,
-            x = 0, view = _mix.viewDimension;
+            x = 0;
 
             /* FF will not triger a scroll event when content size become small than parent container,
             // so we have to fire it manully using scrollbar.scrollTo() */
@@ -147,6 +147,7 @@ var NumberBar = mix("div.nubar", function () {
             _mix.vscrollbar.display( (x|=2, viewHeight < textHeight || !! void _mix.vscrollbar.scrollTo(0, true)) );
 
             defer(function () {
+            var view = _mix.viewDimension;
                 /*  x & 1: vertical scroll bar showed;
                     x & 2: horizontal scroll bar showed.  */
                 if (x & 2) viewWidth = boxWidth - _mix.lineBox.node.offsetLeft - _mix.vscrollbar.node.offsetWidth;

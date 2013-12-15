@@ -19,8 +19,6 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
     var mousedownInfo = {x:-1, y:-1},
         controller = this,
         codesElement = lineBox.node,
-        lastPos = {posX: -1, posY: -1},
-        lastlipre,
 
         setRangeStart = function (range, line, pos) {
             line.setRange(range, pos, true);
@@ -56,49 +54,40 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         },
 
         // handle mousemove event
-        mousemoveHandler = function (event) {
-
-        var lipre = locateLineContentElement(event.target, codesElement);
-            if (lipre == null) { // curosr out of the lineBox
-                return;
-            }
+        mousemoveHandler = combine(
+        function (event) {
         var line = locateLine(event.target, codesElement);
-
-        var lirect = lipre.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
-
-            // reduce ineffectvie position setting
-            if (pos.posX === lastPos.posX && pos.posY === lastPos.posY && lastlipre === lipre) return;
-            lastPos = pos;
-            lastlipre = lipre;
-
-        var range = controller.range;
-            /*
-            if ( mousedownInfo.rangeStartNode == (lipre.firstChild || lipre) ) {
-                // the same line
-                if (pos.charIndex > mousedownInfo.position.charIndex ) {
-                    range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                    range.setEnd( lipre.firstChild || lipre, pos.charIndex );
-                } else {
-                    range.setStart( lipre.firstChild || lipre, pos.charIndex );
-                    range.setEnd( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                }
-            } else if (event.clientY - codesElement.getBoundingClientRect().top < mousedownInfo.y ) {
-                range.setStart( lipre.firstChild || lipre, pos.charIndex );
-                range.setEnd( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-            } else {
-                range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
-                range.setEnd( lipre.firstChild || lipre, pos.charIndex );
+            if (line) { // curosr in the lineBox
+                return [event, line, line.ePre];
             }
-            */
-            // range.setStart( mousedownInfo.rangeStartNode, mousedownInfo.position.charIndex );
+        },
+        
+        function (event, line, lipre) {
+        var lirect = lipre.getBoundingClientRect(),
+            pos = codeMeasure.measure( line.content(), event.clientX - lirect.left, event.clientY - lirect.top);
+            return [line, lipre, pos];
+        },
+
+        (function () {
+        var lastPos = {posX: -1, posY: -1}, lastlipre;
+            // reduce ineffectvie position setting
+            return function (line, lipre, pos) {
+                if (pos.posX === lastPos.posX
+                    && pos.posY === lastPos.posY
+                    && lastlipre === lipre) return;
+
+                lastPos = pos;
+                lastlipre = lipre;
+                return [line, pos, controller.range];
+            };
+        }()),
+
+        function (line, pos, range) {
             mousedownInfo.line.setRange(range, mousedownInfo.position.charIndex, true);
             range.collapse(true);
             setRange(range, line, pos.charIndex);
             codeHighlight.select( range, codesElement );
-
-            bye(event, true);
-        };
+        });
 
         if (browser === "FF")
         codesElement.addEventListener("mousedown", function (event) {
@@ -128,7 +117,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             onevent( document, "mousemove", mousemoveHandler);
 
         var lirect = lipre.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
+            pos = codeMeasure.measure( line.content(), event.clientX - lirect.left, event.clientY - lirect.top);
 
         var codesRect = codesElement.getBoundingClientRect();
             mousedownInfo.x = event.clientX - codesRect.left;
@@ -159,10 +148,11 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             // if (event.button !== 0) return; // Left button only
         var lipre = locateLineContentElement(event.target, codesElement);
             if (lipre == null) return;
+        var line = locateLine(event.target, codesElement);
 
         var lirect = lipre.getBoundingClientRect(),
             rect = codesElement.getBoundingClientRect(),
-            pos = codeMeasure.measure( getText(lipre), event.clientX - lirect.left, event.clientY - lirect.top);
+            pos = codeMeasure.measure( line.content(), event.clientX - lirect.left, event.clientY - lirect.top);
 
             cursor.setPosition( pos.posX, lirect.top - rect.top + pos.posY );
             lineBox.activeLine = lipre.parentNode._mix;
@@ -178,7 +168,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, !(controller.range || {collapsed: true}).collapsed);
         });
 
-        cursor.oninput = buildsteps(
+        cursor.oninput = combine(
         function (event, type) {
             type && log(type);
             // check textarea size
@@ -247,6 +237,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
             return false;
         },
         function (event, type) {
+        var modified;
             // process selection
             if ( controller.range.collapsed ) return [event, type];
 
@@ -269,7 +260,9 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
                 break;
 
             case "paste":
-                lineBox.insert( controller.range, event.clipboardData.getData("text/plain") );
+                lineBox.deletes( controller.range );
+                modified = lineBox.insert( event.clipboardData.getData("text/plain") );
+                log(modified);
                 break;
 
             case "contextmenu":
@@ -313,7 +306,7 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
         },
 
         function (event, type) {
-        var activeLine = lineBox.activeLine, rect;
+        var activeLine = lineBox.activeLine, rect, modified;
 
             switch ( type || event.keyCode ) {
             case 8:  // Backspace
@@ -356,12 +349,14 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
                 break;
 
             case "input":
-                lineBox.insert( "char", event.data );
+                modified = lineBox.insert( event.data );
+                log(modified);
                 showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
             case "paste":
-                lineBox.insert("char", event.clipboardData.getData("text/plain") );
+                modified = lineBox.insert(event.clipboardData.getData("text/plain") );
+                log(modified);
                 showCursorPosition( lineBox, lineBox.activeLine, lineBox.columnIndex, true );
                 break;
 
@@ -372,22 +367,13 @@ var InputController = function (lineBox, cursor, codeMeasure, codeHighlight) {
                 line.setRange(controller.range, -1);
                 codeHighlight.select( controller.range, codesElement );
                 break;
-                /*
-            var node = lineBox.node.firstElementChild.querySelector("pre");
-                controller.range.setStart(node.firstChild || node, 0);
-                node = lineBox.node.lastElementChild.querySelector("pre");
-                if (node.lastChild) node = node.lastChild;
-                controller.range.setEnd(node, node.length || 0);
-                codeHighlight.select( controller.range, codesElement );
-                break;
-                */
 
             case "contextmenu":
                 rect = codesElement.getBoundingClientRect();
                 cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, false);
                 break;
             }
-        } );
+        });
 
     };
 
