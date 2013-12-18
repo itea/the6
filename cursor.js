@@ -108,10 +108,10 @@ var basicMethods = {
     },
 
     Cursor = mix("div.code-cursor > input:text auotcomplete='off'", function () {
-    var _mix = this._mix,
+    var cursor = this._mix,
         textarea = this.children[0];
 
-        _mix.baseX = _mix.baseY = 0;
+        cursor.baseX = cursor.baseY = 0;
         textarea.value = "";
 
     var handlers = [
@@ -120,28 +120,25 @@ var basicMethods = {
         },
         "blur", function (event) {
             // emit("cursor-blur");
-            _mix.hide();
+            cursor.hide();
         },
         "copy", function (event) {
-            _mix.oninput.call( this, event, "copy" );
+            cursor.oninput.call( this, event, "copy" );
             event.preventDefault();
         },
         "cut", function (event) {
-            _mix.oninput.call( this, event, "cut" );
+            cursor.oninput.call( this, event, "cut" );
             event.preventDefault();
         },
         "paste", function (event) {
-            _mix.oninput.call( this, event, "paste" );
+            cursor.oninput.call( this, event, "paste" );
             event.preventDefault();
         },
         "select", function (event) {
-            _mix.oninput.call(this, event, "selectall"); // select all
-            // clean input element, prevent infinit select event
-            // event.target.selectionEnd = 1;
-            // event.preventDefault();
+            cursor.oninput.call(this, event, "selectall"); // select all
         },
         "contextmenu", function (event) {
-            _mix.oninput.call(this, event, "contextmenu");
+            cursor.oninput.call(this, event, "contextmenu");
         },
         "keydown", function (event) {
             switch (event.keyCode) {
@@ -158,7 +155,7 @@ var basicMethods = {
             case 38: // ArrowUp
             case 39: // ArrowRight
             case 40: // ArrowDown
-                _mix.oninput.call(this, event);
+                cursor.oninput.call(this, event);
                 event.preventDefault();
                 break;
             }
@@ -166,11 +163,11 @@ var basicMethods = {
 
     var chromeHandlers = [
         "textInput", function (event) {
-            _mix.oninput.call(this, event, "input");
+            cursor.oninput.call(this, event, "input");
         },
         "input", function (event) {
             if (event.target.value.length === 0)
-                _mix.oninput.call(this, event, "delete"); // delete
+                cursor.oninput.call(this, event, "delete"); // delete
             // setting textarea.value = "" will cause input method doesnt work
         },
         "keydown", function (event) {
@@ -183,7 +180,7 @@ var basicMethods = {
     var firefoxHandlers = [
         "input", function (event) {
             event.data = event.target.value;
-            _mix.oninput.call(this, event, "input");
+            cursor.oninput.call(this, event, "input");
             textarea.value = "";
         },
         "keydown", function (event) {
@@ -212,17 +209,17 @@ var basicMethods = {
     var operaHandlers = [
         "input", function (event) {
             event.data = event.target.value;
-            _mix.oninput.call(this, event, "input");
+            cursor.oninput.call(this, event, "input");
             textarea.value = "";
         }];
 
         bindEvents(handlers.concat(
             {"FF": firefoxHandlers,
              "CHROME": chromeHandlers,
-             "OPERA": operaHandlers}[browser]), textarea);
+             "OPERA": operaHandlers}[browser] || []), textarea);
 
-        _mix.intervalHandler = window.setInterval(function () {
-            _mix.flash();
+        cursor.intervalHandler = window.setInterval(function () {
+            cursor.flash();
         }, 500);
     }, basicMethods);
 

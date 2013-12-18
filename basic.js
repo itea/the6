@@ -25,12 +25,13 @@ var mix = markless.mix,
     var fns = getArgsArray(arguments);
 
         return function () {
-        var result = getArgsArray(arguments),
-            i = 0, len;
+        var args = getArgsArray(arguments),
+            i = 0, len, result;
 
             for (i = 0, len = fns.length; i < len; i++) {
-                result = fns[i].apply(this, result);
+                result = fns[i].apply(this, args);
                 if ( !result ) break; // if fns[i] return false value, stop the prosess
+                if (result !== true) args = result;
             }
 
             return result;
@@ -61,24 +62,17 @@ var mix = markless.mix,
     }()),
 
     // pub/sub
-    emit = (function () {
+    Emiter = function () {
     var fireNow = function (fn) { fn(); },
 
-        print = function (type, args) {
-            log([type].concat(args));
-        },
-
-        emit = function (eventType) {
-        var args = slicefn.call(arguments, 1);
-            fire(eventType, args, defer);
-        },
+        carryArgs = slicefn.call(arguments),
 
         handlersIndex = {},
 
         fire = function (eventType, args, fireFn) {
         var handlers = handlersIndex[ eventType ];
 
-            print(eventType, args);
+            log([eventType].concat(args));
             if ( !handlers || handlers.length === 0) return;
 
             fireFn(function () {
@@ -88,25 +82,36 @@ var mix = markless.mix,
                     (handlers[i] || noop).apply(target, args);
                 }
             });
-        };
+        },
 
-        emit.fire = function (eventType) {
-        var args = slicefn.call(arguments, 1);
+        emit = function (eventType) {
+        var args = carryArgs.concat( slicefn.call(arguments, 1) );
+            fire(eventType, args, defer);
+        },
+        
+        instance = this == window ? emit : this;
+
+        instance.emit = emit;
+
+        instance.fire = function (eventType) {
+        var args = carryArgs.concat( slicefn.call(arguments, 1) );
             fire(eventType, args, fireNow);
         };
 
-        emit.addEventListener = function (eventType, callback, prepend) {
+        instance.addEventListener = function (eventType, callback, prepend) {
         var handlers = handlersIndex[ eventType ];
             if ( !handlers ) handlers = handlersIndex[ eventType ] = [];
             prepend ? handlers.unshift(callback) : handlers.push(callback);
         };
 
-        return emit;
-    }()),
+        return instance;
+    },
+
+    emit = Emiter(),
 
     onevent = (function () {
     /* using event manager to provide extra event management functions that browser cannot provide */
-    var createEventManager = function (node) {
+    var /*createEventManager = function (node) {
         var fnq = [], fnq_capture = [];
 
             return {
@@ -130,11 +135,7 @@ var mix = markless.mix,
                     if (i > -1) fnq.splice(i, 1);
                     i = fnq_capture.indexOf(fn);
                     if (i > -1) fnq_capture.splice(i, 1);
-                }/*,
-                isQueueEmpty: function (capture) {
-                var fnque = capture === true ? fnq_capture : fnq;
-                    return fnque.length === 0;
-                }*/
+                }
             };
         },
 
@@ -142,7 +143,6 @@ var mix = markless.mix,
 
         eventManagerIndex = {},
 
-        /*
         addEventListener = function (node, eventType, fn, capture) {
         var uid = node._the6uid, mgr;
 
@@ -182,6 +182,7 @@ var mix = markless.mix,
                 capture = false;
                 callbacks = [];
                 e = node = getArg("object");
+                if (e == null) e = node = getArg("function");
                 if (e == null) node = emit;
 
                 e = getArg("string");
@@ -213,23 +214,6 @@ var mix = markless.mix,
             }
 
         },
-
-        /*
-        onoffevent = function (fn, node, eventTypes, callback, capture) {
-            "use strict";
-        var i;
-
-            if (typeof node === "string" || node instanceof Array) {
-                capture = arguments[3];
-                callback = arguments[2];
-                eventTypes = arguments[1];
-                node = emit;
-            }
-            if (typeof eventTypes === "string") eventTypes = [eventTypes];
-            for (i = 0; i < eventTypes.length; i++)
-                fn(node, eventTypes[i], callback, capture);
-        },
-        */
 
         onevent = function () {
             onoffloop(addEventListener, getArgsArray(arguments));

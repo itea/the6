@@ -12,6 +12,7 @@ var lineIDseq = 100,
         if (this.dataset) this.dataset.lineId = this._mix.lineID;
         this._mix.ePre = this.querySelector("pre");
         if (content) setText( this._mix.ePre, content );
+        else this._mix.ePre.appendChild( document.createTextNode("") );
     }, {
         /* previous n lines, n default is 1 */
         previousLine: function (n, flg) {
@@ -92,7 +93,7 @@ var lineIDseq = 100,
         },
 
         setRange: function (range, offset, start) {
-        var node = this.ePre.firstChild || this.ePre,
+        var node = this.ePre.firstChild != null ? this.ePre.firstChild : this.ePre,
             offset = offset > this.contentLength() ? this.contentLength() : offset;
 
             if (offset < 0) offset = this.contentLength() + offset +1;

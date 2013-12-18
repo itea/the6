@@ -1,7 +1,7 @@
 var locateLine = function (node, topNode) {
     // find up to locate the CodeLine
-        while (node != topNode) {
-            if (node._mix) return node._mix;
+        while (node && node != topNode) {
+            if (node._mix && node._mix.ePre) return node._mix;
             node = node.parentNode;
         }
         return null;
