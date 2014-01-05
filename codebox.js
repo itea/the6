@@ -14,14 +14,12 @@ var NumberBar = mix("div.nubar", function () {
 
         onevent(
         this, "scroll", function (event) {
-            _mix.onscroll(event);
             emit.fire("horizontal-scroll", this.scrollLeft);
         },
         "textarea-resize", function (width, height, x) {
             if (x & 1) _mix.setScrollLength(width);
         });
     }, {
-        onscroll: noop,
         display: function (s) {
             if (s === true) this.node.style.display = "block";
             if (s === false) this.node.style.display = "none";
@@ -40,14 +38,12 @@ var NumberBar = mix("div.nubar", function () {
 
         onevent(
         this, "scroll", function (event) {
-            _mix.onscroll(event);
             emit.fire("vertical-scroll", this.scrollTop);
         },
         "textarea-resize", function (width, height, x) {
             if (x & 2) _mix.setScrollLength(height);
         });
     }, {
-        onscroll: noop,
         display: function (s) {
             if (s === true) this.node.style.display = "block";
             if (s === false) this.node.style.display = "none";
@@ -66,15 +62,14 @@ var NumberBar = mix("div.nubar", function () {
         boxNode = this.firstElementChild,
         lineBoxNode;
 
-    var cursor = codeBox.cursor = new Cursor()._mix,
-        codeMeasure = codeBox.codeMeasure = new CodeMeasure()._mix,
-        codeHighlight = codeBox.codeHighlight = new CodeHighlight()._mix,
-        lineBox = codeBox.lineBox = new LineBox()._mix,
-        nubar = codeBox.nubar = new NumberBar()._mix,
-        hscrollbar = codeBox.hscrollbar = new HScrollBar()._mix,
-        vscrollbar = codeBox.vscrollbar = new VScrollBar()._mix;
+    var cursor        = codeBox.cursor        = new Cursor()        ._mix,
+        codeMeasure   = codeBox.codeMeasure   = new CodeMeasure()   ._mix,
+        codeHighlight = codeBox.codeHighlight = new CodeHighlight() ._mix,
+        lineBox       = codeBox.lineBox       = new LineBox()       ._mix,
+        nubar         = codeBox.nubar         = new NumberBar()     ._mix,
+        hscrollbar    = codeBox.hscrollbar    = new HScrollBar()    ._mix,
+        vscrollbar    = codeBox.vscrollbar    = new VScrollBar()    ._mix;
 
-        bindControl(codeBox, lineBox, cursor, codeMeasure, codeHighlight),
         lineBoxNode = lineBox.node;
 
         boxNode.appendChild(lineBox.node);
@@ -84,6 +79,8 @@ var NumberBar = mix("div.nubar", function () {
         boxNode.appendChild(nubar.node);
         this.appendChild(hscrollbar.node);
         this.appendChild(vscrollbar.node);
+
+        bindControl(codeBox, lineBox, cursor, codeMeasure, codeHighlight);
 
         /*  each time the cursor was postioned, check if need to scroll context
             to make the cursor show in view area */

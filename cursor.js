@@ -29,7 +29,7 @@ var i = 0, eventType, fn;
 };
 
 var basicMethods = {
-        oninput: noop, // default dummy oninput callback function
+        oninput: function (event, type) { emit.fire("keyboard-input", event, type); },
         hide: function () { this.flash("stop"); return this; },
         show: function () { this.flash("start"); return this; },
         focus: function (needDefer) {

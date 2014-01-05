@@ -110,61 +110,7 @@ var mix = markless.mix,
     emit = Emiter(),
 
     onevent = (function () {
-    /* using event manager to provide extra event management functions that browser cannot provide */
-    var /*createEventManager = function (node) {
-        var fnq = [], fnq_capture = [];
-
-            return {
-                resolve: function (event) {
-                var fnque = (event || {eventPhase: 0}).eventPhase === 1 ? fnq_capture : fnq,
-                    args = slicefn.call(arguments);
-                    i = 0;
-
-                    for (; i < fnque.length; i++) {
-                        (fnque[i] || noop).apply(node, args);
-                    }
-                },
-                addListener: function (fn, capture) {
-                    (capture === true ? fnq_capture : fnq).push(fn);
-                },
-                reset: function () {
-                    fnq.length = fnq_capture.length = 0;
-                },
-                removeListener: function (fn) {
-                var i = fnq.indexOf(fn);
-                    if (i > -1) fnq.splice(i, 1);
-                    i = fnq_capture.indexOf(fn);
-                    if (i > -1) fnq_capture.splice(i, 1);
-                }
-            };
-        },
-
-        uniqueid = 1,
-
-        eventManagerIndex = {},
-
-        addEventListener = function (node, eventType, fn, capture) {
-        var uid = node._the6uid, mgr;
-
-            if (!uid) uid = node._the6uid = uniqueid++;
-            mgr = eventManagerIndex[eventType + "_" + uid];
-            if (!mgr) {
-                mgr = eventManagerIndex[eventType + "_" + uid] = createEventManager(node);
-                node.addEventListener(eventType, mgr.resolve, capture);
-            }
-            mgr.addListener(fn, capture);
-        },
-
-        removeEventListener = function (node, eventType, fn) {
-        var uid = node._the6uid,
-            mgr = eventManagerIndex[eventType + "_" + uid];
-            if (!mgr) return;
-            mgr.removeListener(fn);
-        },
-        */
-
-        // disable event manager mechanism now
-        addEventListener = function (node, eventType, fn, capture) {
+    var addEventListener = function (node, eventType, fn, capture) {
             node.addEventListener(eventType, fn, capture);
         },
         removeEventListener = function (node, eventType, fn) {
@@ -182,7 +128,6 @@ var mix = markless.mix,
                 capture = false;
                 callbacks = [];
                 e = node = getArg("object");
-                if (e == null) e = node = getArg("function");
                 if (e == null) node = emit;
 
                 e = getArg("string");

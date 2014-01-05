@@ -173,7 +173,7 @@ var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight
             cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, !(range || {collapsed: true}).collapsed);
         });
 
-        cursor.oninput = combine(
+        onevent("keyboard-input", combine(
         function (event, type) {
             // check textarea size
             lineBox.checkDimensionSize();
@@ -375,7 +375,7 @@ var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight
                 cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, false);
                 break;
             }
-        });
+        }));
 
     };
 
