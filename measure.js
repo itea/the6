@@ -31,6 +31,10 @@ var mixresult = function () {
     },{
         lineContent: {length: -1},
 
+        getLineHeight: function () {
+            return this.node.children[0].offsetHeight;
+        },
+
         setLine: function (line) {
             if (line.length === this.lineContent.length && line === this.lineContent)
                 return this;

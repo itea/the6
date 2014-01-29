@@ -104,6 +104,12 @@ var mix = markless.mix,
             prepend ? handlers.unshift(callback) : handlers.push(callback);
         };
 
+        instance.removeEventListener = function (eventType, callback) {
+        var handlers = handlersIndex[ eventType ],
+            i = (handlers && handlers.indexOf( callback ));
+            if (typeof i === "number" && i > -1) handlers.splice(i, 1);
+        };
+
         return instance;
     },
 
@@ -118,7 +124,7 @@ var mix = markless.mix,
         },
 
         onoffloop = function (bind, args) {
-        var node, types, callbacks, capture, e;
+        var node, types, callbacks, capture, e,
             getArg = function (expect) {
                 return (typeof args[0] === expect) ? args.shift() : undefined;
             };

@@ -1,4 +1,4 @@
-var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight) {
+var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight, vscrollbar, hscrollbar) {
 
     var lastLineID = -1,
 
@@ -52,10 +52,9 @@ var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight
         },
 
         // handle mousemove event
-        mousemoveHandler = combine(
-        function (event) {
+        mousemoveHandler = function (event) {
         var line = locatePreLine(event.target, codesElement);
-            if (line) selection.fire("selection-mousemove", event, line); // curosr in the lineBox
+            if (line) return void selection.fire("selection-mousemove", event, line); // curosr in the lineBox
 
             // when cursor out of box, scroll content and select
         var x = event.clientX, y = event.clientY,
@@ -68,26 +67,8 @@ var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight
             if (x < rect.left + view.left) z |= 8;
             if (x > rect.right - view.right) z |= 2;
 
-            if (!z) return;
             selection.fire("selection-outofboxmove", z);
-        });
-
-        if (browser === "FF")
-        codesElement.addEventListener("mousedown", function (event) {
-            if (event.button === 2) {
-            log("mousedown");
-            // FF browser need process before contextmenu because it triger contextmenu after contextmenu event
-            var rect = codesElement.getBoundingClientRect();
-            var cleaning = cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, !(range || {collapsed: true}).collapsed, true);
-            var delay = function () {
-                    defer(cleaning, 200);
-                    offevent(document, "mouseup", delay);
-                    return;
-                };
-
-                onevent(document, "mouseup", delay);
-            }
-        });
+        };
 
     var selection = new Emiter({});
         onevent([
@@ -121,6 +102,12 @@ var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight
                 if (pos.posX === x && pos.posY === y && line === _line) return;
 
                 x = pos.posX, y = pos.posY, _line = line;
+
+                // clear interval for outofboxmove
+                if (state.interval) {
+                    window.clearInterval(state.interval);
+                    delete state.interval;
+                }
                 return [state, line, pos, range];
             };
         }()),
@@ -129,30 +116,71 @@ var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight
             range.collapse(true);
             setRange(range, line, pos.charIndex);
             codeHighlight.select( range, codesElement );
-        })
+        }),
+
+        selection, "selection-outofboxmove", function (state, z) {
+            state.z = z;
+            if (!state.interval) {
+            var lineHeight = codeMeasure.getLineHeight(); 
+                state.interval = window.setInterval(function () {
+                var z = state.z;
+                    if (z&1) {
+                        vscrollbar.scrollBy(-lineHeight);
+                        lineBox.seekLine(-1);
+                        lineBox.activeLine.setRange(range, lineBox.columnIndex);
+                        codeHighlight.select( range, codesElement );
+                    }
+                    if (z&4) {
+                        vscrollbar.scrollBy(lineHeight);
+                        lineBox.seekLine(1);
+                        lineBox.activeLine.setRange(range, lineBox.columnIndex);
+                        codeHighlight.select( range, codesElement );
+                    }
+                    if (z&2) {
+                        hscrollbar.scrollBy(20);
+                    }
+                    if (z&8) hscrollbar.scrollBy(-20);
+                }, 200);
+
+                onevent(document, "mouseup", function cleaning(event) {
+                    offevent(document, "mouseup", cleaning);
+                    if (state.interval) {
+                        window.clearInterval(state.interval);
+                        delete state.interval;
+                    }
+                });
+            }
+        }
         ]);
 
-        codesElement.addEventListener("mousedown", function (event) {
+    var handlers = [
+        codesElement, "mousedown", function (event) {
             cursor.reset();
             if (event.button !== 0) return; // Left button only
 
         var line = locatePreLine(event.target, codesElement);
             if (line == null) return;
 
+        var lirect = line.ePre.getBoundingClientRect(),
+            pos = codeMeasure.measure(line.content(), event.clientX - lirect.left, event.clientY - lirect.top);
+            cursor.setPosition(pos.posX, line.node.offsetTop + pos.posY);
+            lineBox.activeLine = line;
+            lineBox.columnIndex = pos.charIndex;
+
             selection.fire("selection-mousedown", event, line);
 
             onevent( document, "mousemove", mousemoveHandler);
 
             bye(event, true); // prevent cursor blur
-        });
+        },
 
-        onevent( document, "mouseup", function (event) {
+        document, "mouseup", function (event) {
             offevent( document, "mousemove", mousemoveHandler);
             // selection.fire("selection-mouseup", event);
-        });
+        },
 
         // cusror locate
-        onevent( codesElement, "mouseup", function (event) {
+        codesElement, "mouseup", function (event) {
             // if (event.button !== 0) return; // Left button only
         var line = locatePreLine(event.target, codesElement);
             if (line == null) return;
@@ -162,28 +190,18 @@ var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight
             cursor.setPosition(pos.posX, line.node.offsetTop + pos.posY);
             lineBox.activeLine = line;
             lineBox.columnIndex = pos.charIndex;
-        });
+        },
 
-        if (browser !== "FF")
-        onevent( codesElement, "contextmenu", function (event) {
-        var line = locatePreLine(event.target, codesElement);
-            if (line == null) return;
-
-            rect = codesElement.getBoundingClientRect();
-            cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, !(range || {collapsed: true}).collapsed);
-        });
-
-        onevent("keyboard-input", combine(
+        "keyboard-input", combine(
         function (event, type) {
             // check textarea size
             lineBox.checkDimensionSize();
             return true;
         },
         function (event, type) {
-            // handle selection using keyboard
             if (!event.shiftKey || event.keyCode >40 || event.keyCode <35) return true;
 
-            // begin
+            // handle selection using keyboard
         var x = 0, // x == 1: cursor is start node, x == 2: cursor is end node, x == 3: collapsed
             setRangePoint = [undefined, setRangeStart, setRangeEnd],
             actLine;
@@ -375,7 +393,37 @@ var bindControl = function (codeBox, lineBox, cursor, codeMeasure, codeHighlight
                 cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, false);
                 break;
             }
-        }));
+        })
+        ];
 
+        if (browser !== "FF") handlers.push(
+        codesElement, "contextmenu", function (event) {
+        var line = locatePreLine(event.target, codesElement);
+            if (line == null) return;
+
+            rect = codesElement.getBoundingClientRect();
+            cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, !(range || {collapsed: true}).collapsed);
+        });
+
+        if (browser === "FF") handlers.push(
+        codesElement, "mousedown", function (event) {
+            if (event.button === 2) {
+            // FF browser need process before contextmenu because it triger contextmenu after contextmenu event
+            var rect = codesElement.getBoundingClientRect();
+            var cleaning = cursor.beforeContextmenuPopup(event.clientX - rect.left, event.clientY - rect.top, !(range || {collapsed: true}).collapsed, true);
+            var delay = function () {
+                    defer(cleaning, 200);
+                    offevent(document, "mouseup", delay);
+                    return;
+                };
+
+                onevent(document, "mouseup", delay);
+            }
+        });
+
+        onevent(handlers);
+
+        // to unbind event handlers, use:
+        return function () { offevent(handlers); };
     };
 

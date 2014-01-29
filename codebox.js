@@ -30,7 +30,8 @@ var NumberBar = mix("div.nubar", function () {
             if (y != null) this.node.style.right = (y || 0) + "px";
         },
         setScrollLength: function (s) { this.node.firstElementChild.style.width  = s + "px"; },
-        scrollTo: function (s, y) {this.node.scrollLeft = s; if (y) emit.fire("horizontal-scroll", this.node.scrollLeft); }
+        scrollTo: function (s, y) {this.node.scrollLeft = s; if (y) emit.fire("horizontal-scroll", this.node.scrollLeft); },
+        scrollBy: function (s, y) {this.node.scrollLeft += s; if (y) emit.fire("horizontal-scroll", this.node.scrollLeft); }
     }),
 
     VScrollBar = mix("div.scroll.vertical > div", function () {
@@ -54,7 +55,8 @@ var NumberBar = mix("div.nubar", function () {
             if (y != null) this.node.style.bottom = (y || 0) + "px";
         },
         setScrollLength: function (s) { this.node.firstElementChild.style.height  = s + "px"; },
-        scrollTo: function (s, y) {this.node.scrollTop = s; if (y) emit.fire("vertical-scroll", this.node.scrollTop); }
+        scrollTo: function (s, y) {this.node.scrollTop = s; if (y) emit.fire("vertical-scroll", this.node.scrollTop); },
+        scrollBy: function (s, y) {this.node.scrollTop += s; if (y) emit.fire("vertical-scroll", this.node.scrollTop); }
     }),
 
     CodeBox = mix("div.boxwrap > div.code-box spellcheck='false'", function () {
@@ -80,7 +82,7 @@ var NumberBar = mix("div.nubar", function () {
         this.appendChild(hscrollbar.node);
         this.appendChild(vscrollbar.node);
 
-        bindControl(codeBox, lineBox, cursor, codeMeasure, codeHighlight);
+        bindControl(codeBox, lineBox, cursor, codeMeasure, codeHighlight, vscrollbar, hscrollbar);
 
         /*  each time the cursor was postioned, check if need to scroll context
             to make the cursor show in view area */
