@@ -22,10 +22,13 @@ var mix = markless.mix,
     },
 
     combine = function () {
-    var fns = getArgsArray(arguments);
+    var fns = getArgsArray(arguments), initArgs = [];
+
+        while(fns[0] != null && typeof fns[0] !== "function")
+            initArgs.push( fns.shift() );
 
         return function () {
-        var args = getArgsArray(arguments),
+        var args = initArgs.concat( getArgsArray(arguments) ),
             i = 0, len, result;
 
             for (i = 0, len = fns.length; i < len; i++) {
