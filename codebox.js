@@ -9,7 +9,7 @@ var NumberBar = mix("div.nubar", function () {
         });
     }),
 
-    HScrollBar = mix("div.scroll.horizontal > div", function () {
+    HScrollBar = mix("div.scroll.horizontal > div.scroll-div", function () {
     var _mix = this._mix;
 
         onevent(
@@ -34,7 +34,7 @@ var NumberBar = mix("div.nubar", function () {
         scrollBy: function (s, y) {this.node.scrollLeft += s; if (y) emit.fire("horizontal-scroll", this.node.scrollLeft); }
     }),
 
-    VScrollBar = mix("div.scroll.vertical > div", function () {
+    VScrollBar = mix("div.scroll.vertical > div.scroll-div", function () {
     var _mix = this._mix;
 
         onevent(
@@ -59,6 +59,33 @@ var NumberBar = mix("div.nubar", function () {
         scrollBy: function (s, y) {this.node.scrollTop += s; if (y) emit.fire("vertical-scroll", this.node.scrollTop); }
     }),
 
+    VScrollBar2 = bee.mix(function () {
+    var _mix = this,
+        node = this.node = markless("div.scroll.vertical > div.scroll-div");
+
+        onevent(
+        node, "scroll", function (event) {
+            emit.fire("vertical-scroll", node.scrollTop);
+        },
+        "textarea-resize", function (width, height, x) {
+            if (x & 2) _mix.setScrollLength(height);
+        });
+        return [node];
+    }, [
+        "display", function (node, s) {
+            if (s === true) node.style.display = "block";
+            if (s === false) node.style.display = "none";
+            else return node.style.display !== "none";
+        },
+        "setHeight", function (node, s, y) {
+            node.style.height = s + "px";
+            if (y != null) node.style.bottom = (y || 0) + "px";
+        },
+        "setScrollLength", function (node, s) { node.firstElementChild.style.height  = s + "px"; },
+        "scrollTo", function (node, s, y) {node.scrollTop = s; if (y) emit.fire("vertical-scroll", node.scrollTop); },
+        "scrollBy", function (node, s, y) {node.scrollTop += s; if (y) emit.fire("vertical-scroll", node.scrollTop); }
+    ]);
+
     CodeBox = mix("div.boxwrap > div.code-box spellcheck='false'", function () {
     var codeBox = this._mix,
         boxNode = this.firstElementChild,
@@ -70,7 +97,8 @@ var NumberBar = mix("div.nubar", function () {
         lineBox       = codeBox.lineBox       = new LineBox()       ._mix,
         nubar         = codeBox.nubar         = new NumberBar()     ._mix,
         hscrollbar    = codeBox.hscrollbar    = new HScrollBar()    ._mix,
-        vscrollbar    = codeBox.vscrollbar    = new VScrollBar()    ._mix;
+        // vscrollbar    = codeBox.vscrollbar    = new VScrollBar()    ._mix;
+        vscrollbar = codeBox.vscrollbar = new VScrollBar2();
 
         lineBoxNode = lineBox.node;
 

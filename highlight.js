@@ -18,6 +18,22 @@ var setSelectionRect = function (node, t, l, h, w, show) {
         this.clearSelection = noop;
     },
     
+    /*
+    _CodeHighlight = combine(
+        '<div class="code-highlight"><div class="selected"><div class="selected"><div class="selected"></div>',
+        
+        function (html) {
+        var wrap = document.createElement("div");
+            wrap.innerHTML = html;
+
+            return [ wrap.firstElementChild ];
+        },
+        function (node) {
+            return [ node, node._mix = {node: node} ];
+        }
+    },
+    */
+
     CodeHighlight = mix("div.code-highlight\n div.selected\n div.selected\n div.selected", function () {
     var node = this;
 

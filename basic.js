@@ -202,9 +202,5 @@ var mix = markless.mix,
         if (b) event.stopPropagation();
     };
 
-    Array.prototype.applyOn = function (fn, o) {
-        return fn.apply(o, this);
-    };
-
-    Object.defineProperty(Array.prototype, 'applyOn', {'enumerable': false});
+    bee.equip("mix");
 

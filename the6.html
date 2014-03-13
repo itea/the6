@@ -10,7 +10,7 @@ html, body {padding: 0; margin: 0}
 .boxwrap .scroll {position:absolute; z-index: 10;}
 .boxwrap .scroll.horizontal {right:0;bottom:0;overflow-x:scroll;}
 .boxwrap .scroll.vertical {right:0;bottom:0;overflow-y:scroll;}
-.boxwrap .scroll div {width: 1px; height: 1px;}
+.boxwrap .scroll-div {width: 1px; height: 1px;}
 
 .code-box {position: relative; padding: 0 30px 30px 0; margin: 0 -30px -30px 0; background-color: #dee; overflow:auto; height:100%; width:100%;}
 .code-box {font: normal normal normal 14px/17px monospace; cursor:auto;}
@@ -34,13 +34,13 @@ html, body {padding: 0; margin: 0}
 .codes {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
 .codes ::selection {background-color: transparent;}
 .codes ::-moz-selection {background-color: transparent;}
-.codes li {margin: 0; padding:0; /*white-space: pre;*/ border:none; outline:none; position:relative;}
-.codes li {counter-increment: lineNumber;}
+.codes .line {margin: 0; padding:0; /*white-space: pre;*/ border:none; outline:none; position:relative;}
+.codes .line {counter-increment: lineNumber;}
 .codes .nu {position:absolute; left:-36px;width:32px; padding-right: 4px;text-align:right; color:#806060;z-index:11;}
 .codes .nu {-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none;}
 .codes .nu:after {content: counter(lineNumber);}
-.codes pre:empty:after {content:" ";}
-.codes pre {margin: 0; padding: 0; border: none; z-index: 9; position:relative;}
+.codes .line-pre:empty:after {content:" ";}
+.codes .line-pre {margin: 0; padding: 0; border: none; z-index: 9; position:relative;}
 /*.codes pre {white-space: pre-wrap;}*/
 
 @-moz-document url-prefix() {
@@ -49,16 +49,20 @@ html, body {padding: 0; margin: 0}
 }
 #bb {padding:20px;}
 	</style>
-    <script language="javascript" src="markless.js"></script>
-    <script language="javascript" src="basic.js"></script>
-    <script language="javascript" src="control.js"></script>
-    <script language="javascript" src="linebox.js"></script>
-    <script language="javascript" src="codebox.js"></script>
-    <script language="javascript" src="cursor.js"></script>
-    <script language="javascript" src="measure.js"></script>
-    <script language="javascript" src="highlight.js"></script>
-    <script language="javascript" src="codeline.js"></script>
-    <script language="javascript" src="misc.js"></script>
+    <script defer language="javascript" src="markless.js"></script>
+    <script defer language="javascript" src="the8.js"></script>
+    <script defer language="javascript" src="basic.js"></script>
+    <script defer language="javascript" src="control.js"></script>
+    <script defer language="javascript" src="linebox.js"></script>
+    <script defer language="javascript" src="codebox.js"></script>
+    <script defer language="javascript" src="cursor.js"></script>
+    <script defer language="javascript" src="measure.js"></script>
+    <script defer language="javascript" src="highlight.js"></script>
+    <script defer language="javascript" src="codeline.js"></script>
+    <script defer language="javascript" src="misc.js"></script>
+</head>
+<body>
+<div id="bb"></div>
 	<script language="javascript" id="inpagecodes">
 var fn = function () {
     var inpagecodes = document.getElementById("inpagecodes").textContent;
@@ -77,12 +81,10 @@ var xhr = new XMLHttpRequest();
             fn(xhr.responseText);
     };
 };
-window.onload = function() {
+/*window.onload = function() {
     fn();
-};
+};*/
+window.addEventListener("DOMContentLoaded", fn);
 	</script>
-</head>
-<body>
-<div id="bb"></div>
 </body>
 </html>

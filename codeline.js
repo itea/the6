@@ -7,7 +7,7 @@ var lineIDseq = 100,
         return node.innerHTML;
     },
 
-    CodeLine = mix("li\n div.nu\n pre", function (content) {
+    CodeLine = mix("li.line\n div.nu\n pre.line-pre", function (content) {
         this._mix.lineID = lineIDseq++;
         if (this.dataset) this.dataset.lineId = this._mix.lineID;
         this._mix.ePre = this.querySelector("pre");
